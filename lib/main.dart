@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import './whiteboard/model.dart';
+import './whiteboard/widget.dart';
 
 void main() {
   runApp(MyApp());
@@ -10,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
         // This makes the visual density adapt to the platform that you run
         // the app on. For desktop platforms, the controls will be smaller and
         // closer together (more dense) than on mobile platforms.
@@ -28,7 +31,21 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Write Out TO Help Out"),
       ),
-      body: Text("HELLO"),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChangeNotifierProvider(
+                create: (context) => WhiteboardModel(),
+                child: WhiteboardEditor(),
+              ),
+              fullscreenDialog: true,
+            ),
+          );
+        },
+        child: Icon(Icons.edit),
+      ),
     );
   }
 }
