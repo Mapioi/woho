@@ -3,8 +3,9 @@ import './model.dart';
 
 class WhiteboardPainter extends CustomPainter {
   final WhiteboardModel _model;
+  final Color _canvasColor;
 
-  WhiteboardPainter(this._model);
+  WhiteboardPainter(this._model, this._canvasColor);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -19,12 +20,16 @@ class WhiteboardPainter extends CustomPainter {
       }
 
       final paint = Paint()
-        ..color = stroke.color
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth = stroke.strokeWidth
         ..style = PaintingStyle.stroke;
 
+      if (stroke.isErasing) {
+        paint.color = _canvasColor;
+      } else {
+        paint.color = stroke.color;
+      }
       canvas.drawPath(path, paint);
     }
   }
