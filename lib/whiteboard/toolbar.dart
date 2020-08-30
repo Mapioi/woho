@@ -56,7 +56,15 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
     );
   }
 
-  final buttons = <Widget>[strokeWidthDropdown, colorDropdown]
+  final printSvgButton = IconButton(
+    icon: Icon(Icons.print),
+    onPressed: () {
+      // TODO get the actuel canvas size
+      print(model.toSvg(Size(1366, 1024)));
+    },
+  );
+
+  final buttons = <Widget>[printSvgButton, strokeWidthDropdown, colorDropdown]
     ..addAll(Tool.values.map(makeToolButton));
 
   final paddedButtons = buttons.map((w) {

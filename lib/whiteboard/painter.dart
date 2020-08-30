@@ -12,10 +12,9 @@ class WhiteboardPainter extends CustomPainter {
 
     for (final stroke in _model.strokes) {
       final path = Path();
-      if (stroke.offsets.isNotEmpty) {
-        final offset0 = stroke.offsets.first;
-        path.moveTo(offset0.dx, offset0.dy);
-      }
+      assert(stroke.offsets.isNotEmpty);
+      final offset0 = stroke.offsets.first;
+      path.moveTo(offset0.dx, offset0.dy);
       for (final offset in stroke.offsets) {
         path.lineTo(offset.dx, offset.dy);
       }

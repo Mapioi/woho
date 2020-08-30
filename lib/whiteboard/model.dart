@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:xml/xml.dart';
 
 class Stroke {
   final Color color;
@@ -138,5 +139,39 @@ class WhiteboardModel extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  String toSvg(Size size) {
+    final builder = XmlBuilder();
+    builder.processing('xml', 'version="1.0" encoding="UTF-8" standalone="no"');
+    builder.element('svg', nest: () {
+      builder.attribute('viewbox', "0 0 ${size.width} ${size.height}");
+      for (final stroke in _strokes) {
+        if (!stroke.isErasing) {
+          builder.element('path', nest: () {
+            final lineCommandBuffer = new StringBuffer();
+            assert(stroke.offsets.isNotEmpty);
+            final offset0 = stroke.offsets.first;
+            lineCommandBuffer.write('M ${offset0.dx} ${offset0.dy} ');
+            for (final offset in stroke.offsets) {
+              lineCommandBuffer.write('L ${offset.dx} ${offset.dy} ');
+            }
+            builder.attribute('d', lineCommandBuffer.toString());
+
+            final r = stroke.color.red.toRadixString(16);
+            final g = stroke.color.green.toRadixString(16);
+            final b = stroke.color.blue.toRadixString(16);
+
+            builder.attribute('fill', "transparent");
+            builder.attribute('stroke', "#$r$g$b");
+            builder.attribute('stroke-width', stroke.strokeWidth);
+            builder.attribute('stroke-linecap', "round");
+            builder.attribute('stroke-linejoin', "round");
+          });
+        }
+      }
+    });
+
+    return builder.buildDocument().toXmlString();
   }
 }
