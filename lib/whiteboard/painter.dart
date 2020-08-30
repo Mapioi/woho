@@ -3,12 +3,13 @@ import './model.dart';
 
 class WhiteboardPainter extends CustomPainter {
   final WhiteboardModel _model;
-  final Color _canvasColor;
 
-  WhiteboardPainter(this._model, this._canvasColor);
+  WhiteboardPainter(this._model);
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
+
     for (final stroke in _model.strokes) {
       final path = Path();
       if (stroke.offsets.isNotEmpty) {
@@ -26,12 +27,15 @@ class WhiteboardPainter extends CustomPainter {
         ..style = PaintingStyle.stroke;
 
       if (stroke.isErasing) {
-        paint.color = _canvasColor;
+        paint.color = Colors.red;
+        paint.blendMode = BlendMode.clear;
       } else {
         paint.color = stroke.color;
       }
       canvas.drawPath(path, paint);
     }
+
+    canvas.restore();
   }
 
   @override
