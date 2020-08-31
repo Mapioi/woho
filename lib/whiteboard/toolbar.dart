@@ -64,8 +64,19 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
     },
   );
 
+  final undoButton = IconButton(
+    icon: Icon(Icons.undo),
+    onPressed: model.canUndo() ? model.undo : null,
+  );
+
+  final redoButton = IconButton(
+    icon: Icon(Icons.redo),
+    onPressed: model.canRedo() ? model.redo : null,
+  );
+
   final buttons = <Widget>[printSvgButton, strokeWidthDropdown, colorDropdown]
-    ..addAll(Tool.values.map(makeToolButton));
+    ..addAll(Tool.values.map(makeToolButton))
+    ..addAll([undoButton, redoButton]);
 
   final paddedButtons = buttons.map((w) {
     return Padding(
