@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
+import './history.dart';
 
 class Stroke {
   final Color color;
@@ -25,7 +26,7 @@ enum Tool {
   eraser,
 }
 
-class WhiteboardModel extends ChangeNotifier {
+class WhiteboardModel extends ChangeNotifier with Undoable {
   final List<Stroke> _strokes = <Stroke>[];
   Stroke _currentStroke;
   Tool _tool = Tool.pen;
@@ -117,8 +118,25 @@ class WhiteboardModel extends ChangeNotifier {
           strokeWidth: strokeWidth,
         );
         _currentStroke.add(event.localPosition);
-        _strokes.add(_currentStroke);
-        notifyListeners();
+        execute(Command(() {
+          _strokes.add(_currentStroke);
+          notifyListeners();
+
+          final i = _strokes.length - 1;
+          final strokeRef = _currentStroke; // (Ab)using the mutable stroke
+          return Change(
+            undo: () {
+              _strokes.remove(strokeRef);
+              assert(!_strokes.contains(strokeRef));
+              notifyListeners();
+            },
+
+            redo: () {
+              _strokes.insert(i, strokeRef);
+              notifyListeners();
+            },
+          );
+        }));
       }
     }
   }
