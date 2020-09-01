@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import './model.dart';
+import './data.dart';
 
 class WhiteboardPainter extends CustomPainter {
-  final WhiteboardModel _model;
+  final WhiteboardDataView _data;
 
-  WhiteboardPainter(this._model);
+  WhiteboardPainter(this._data);
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
 
-    for (final stroke in _model.strokes) {
+    for (final stroke in _data.strokes) {
       final path = Path();
       assert(stroke.offsets.isNotEmpty);
       final offset0 = stroke.offsets.first;

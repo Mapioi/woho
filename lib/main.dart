@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './whiteboard/model.dart';
-import './whiteboard/widget.dart';
+import './whiteboard/editor.dart';
 
 void main() {
   runApp(MyApp());
@@ -27,6 +27,8 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Write Out TO Help Out"),
@@ -37,7 +39,7 @@ class MyHomePage extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => ChangeNotifierProvider(
-                create: (context) => WhiteboardModel(),
+                create: (context) => WhiteboardModel(size: size),
                 child: WhiteboardEditor(),
               ),
               fullscreenDialog: true,

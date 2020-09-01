@@ -60,7 +60,7 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
     icon: Icon(Icons.print),
     onPressed: () {
       // TODO get the actuel canvas size
-      print(model.toSvg(Size(1366, 1024)));
+      print(model.data.toSvg().toString());
     },
   );
 

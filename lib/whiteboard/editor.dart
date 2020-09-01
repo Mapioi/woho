@@ -16,7 +16,7 @@ class WhiteboardEditor extends StatelessWidget {
         body: Listener(
           child: CustomPaint(
             size: MediaQuery.of(context).size,
-            painter: WhiteboardPainter(model),
+            painter: WhiteboardPainter(model.data),
           ),
           onPointerDown: model.onPointerDown,
           onPointerMove: model.onPointerMove,
