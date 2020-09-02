@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 
@@ -17,8 +18,26 @@ class Stroke {
   UnmodifiableListView<Offset> get offsets => UnmodifiableListView(_offsets);
 
   void add(Offset offset) => _offsets.add(offset);
+
+  void addPath(String path) {
+    var i = 0;
+    double x, y;
+    for (final s in path.split(" ")) {
+      if (i % 3 == 0) {
+        assert(s == 'M' || s == 'L');
+      } else if (i % 3 == 1) {
+        x = double.parse(s);
+      } else {
+        y = double.parse(s);
+        _offsets.add(Offset(x, y));
+      }
+
+      i += 1;
+    }
+  }
 }
 
+// TODO merge with view
 class WhiteboardData {
   Size _size;
   final List<Stroke> strokes;
@@ -29,6 +48,71 @@ class WhiteboardData {
         _size,
         UnmodifiableListView(strokes),
       );
+
+  /// From (a subset of) a svg, where we only accept paths and masks for erasing
+  factory WhiteboardData.fromSvg(XmlDocument document) {
+    Color fromHex(String hex) {
+      assert(hex.length == 7 && hex[0] == '#');
+      final r = int.parse(hex.substring(1, 3), radix: 16);
+      final g = int.parse(hex.substring(3, 5), radix: 16);
+      final b = int.parse(hex.substring(5, 7), radix: 16);
+      return Color.fromRGBO(r, g, b, 1.0);
+    }
+
+    final svg = document.getElement('svg');
+    assert(svg != null);
+    final viewBox = svg.getAttribute('viewbox').split(" ");
+    assert(viewBox.length == 4);
+    final width = double.parse(viewBox[2]);
+    final height = double.parse(viewBox[3]);
+
+    final strokes = <Stroke>[];
+    final eraserStrokes = <int, Stroke>{};
+    for (final mask in svg.findElements('mask')) {
+      final idString = mask.getAttribute('id');
+      final id = int.parse(idString.split('eraser')[1]);
+      if (id != 0) {
+        final path = mask.getElement('path');
+        final strokeWidth = double.parse(path.getAttribute('stroke-width'));
+        final eraserStroke = Stroke(
+          color: null,
+          isErasing: true,
+          strokeWidth: strokeWidth,
+        );
+        eraserStroke.addPath(path.getAttribute('d'));
+        eraserStrokes[id] = eraserStroke;
+      }
+    }
+    var iEraser = eraserStrokes.length;
+    for (final path in svg.findElements('path')) {
+      final color = fromHex(path.getAttribute('stroke'));
+      final strokeWidth = double.parse(path.getAttribute('stroke-width'));
+      final stroke = Stroke(
+        color: color,
+        isErasing: false,
+        strokeWidth: strokeWidth,
+      );
+      stroke.addPath(path.getAttribute('d'));
+      final maskUrl = path.getAttribute('mask');
+      final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
+      assert(maskUrl == "url(#eraser$maskId)");
+      assert(maskId <= iEraser);
+      while (iEraser > max(1, maskId)) {
+        strokes.add(eraserStrokes[iEraser]);
+        iEraser -= 1;
+      }
+      strokes.add(stroke);
+    }
+    while (iEraser > 0) {
+      strokes.add(eraserStrokes[iEraser]);
+      iEraser -= 1;
+    }
+
+    return WhiteboardData(
+      Size(width, height),
+      strokes,
+    );
+  }
 }
 
 /// Unmodifiable view of whiteboard data
@@ -41,9 +125,9 @@ class WhiteboardDataView {
   XmlDocument toSvg() {
     /// Convert Color instance to hex string
     String hex(Color c) {
-      final r = c.red.toRadixString(16);
-      final g = c.green.toRadixString(16);
-      final b = c.blue.toRadixString(16);
+      final r = c.red.toRadixString(16).padLeft(2, '0');
+      final g = c.green.toRadixString(16).padLeft(2, '0');
+      final b = c.blue.toRadixString(16).padLeft(2, '0');
       return "#$r$g$b";
     }
 
@@ -52,9 +136,9 @@ class WhiteboardDataView {
       final buffer = new StringBuffer();
       assert(offsets.isNotEmpty);
       final offset0 = offsets.first;
-      buffer.write('M ${offset0.dx} ${offset0.dy} ');
+      buffer.write('M ${offset0.dx} ${offset0.dy}');
       for (final offset in offsets) {
-        buffer.write('L ${offset.dx} ${offset.dy} ');
+        buffer.write(' L ${offset.dx} ${offset.dy}');
       }
       return buffer.toString();
     }
