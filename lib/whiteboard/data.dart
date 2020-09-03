@@ -3,11 +3,18 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 
+/// A pen or eraser stroke.
 class Stroke {
-  final Color color;
-  final bool isErasing;
-  final double strokeWidth;
-  final List<Offset> offsets = [];
+  /// The fill colour of this stroke.
+  ///
+  /// If [isErasing] is true, [color] is ignored and can/should be null.
+  Color color;
+  bool isErasing;
+  double strokeWidth;
+
+  /// The coordinates that the tip of the pen/eraser passes through, used to
+  /// produce this stroke via linear interpolation.
+  List<Offset> offsets = [];
 
   Stroke({
     @required this.color,
@@ -15,12 +22,27 @@ class Stroke {
     @required this.strokeWidth,
   });
 
-  void addPath(String path) {
+  /// Adds the points specified in the d attribute to this stroke.
+  ///
+  /// The d attribute must only contain space-delimited commands, starting with
+  /// a MoveTo 'M $x $y' command followed by only LineTo 'L $x $y' commands,
+  /// where x and y are doubles.
+  ///
+  /// ```dart
+  /// Stroke s = Stroke(color: null, isErasing: true, strokeWidth: 1.0);
+  /// s.addSvgPath("M 524.5 118.5 L 524.5 118.5 L 524.5 118.5");
+  /// s.offsets.length == 3
+  /// ```
+  void addSvgPath(String path) {
     var i = 0;
     double x, y;
     for (final s in path.split(" ")) {
       if (i % 3 == 0) {
-        assert(s == 'M' || s == 'L');
+        if (i == 0) {
+          assert(s == 'M');
+        } else {
+          assert(s == 'L');
+        }
       } else if (i % 3 == 1) {
         x = double.parse(s);
       } else {
@@ -33,6 +55,10 @@ class Stroke {
   }
 }
 
+/// An unmodifiable [Stroke] view of another [Stroke].
+///
+/// This class exposes only getters; it is not possible to mutate the fields of
+/// the underlying [_stroke] of this view via the returned values.
 class UnmodifiableStrokeView {
   final Stroke _stroke;
 
@@ -48,14 +74,25 @@ class UnmodifiableStrokeView {
       UnmodifiableListView(_stroke.offsets);
 }
 
+/// A container for the [Size] of the whiteboard and the [Stroke]s on it.
 class WhiteboardData {
   final Size size;
   final List<Stroke> strokes;
 
   WhiteboardData(this.size, this.strokes);
 
+  /// Generates an svg document that produces the same image as painted by a
+  /// [WhiteboardPainter].
+  ///
+  /// * The dimension of the svg's `viewBox` is set to [size];
+  /// * Pen strokes are represented by svg paths specified by line commands,
+  /// with the attributes `stroke`, `stroke-width` set to [Stroke.color] and
+  /// [Stroke.strokeWidth];
+  /// * The effects of the erasing strokes are achieved via masks (see below for
+  /// a more detailed explanation).
   XmlDocument get svg {
-    /// Convert Color instance to hex string
+    // Utility functions
+    // Convert Color instance to hex string
     String hex(Color c) {
       final r = c.red.toRadixString(16).padLeft(2, '0');
       final g = c.green.toRadixString(16).padLeft(2, '0');
@@ -63,7 +100,7 @@ class WhiteboardData {
       return "#$r$g$b";
     }
 
-    /// Convert list of offsets to line commands drawing the line
+    // Convert list of offsets to line commands drawing the stroke
     String lineCommands(List<Offset> offsets) {
       final buffer = new StringBuffer();
       assert(offsets.isNotEmpty);
@@ -80,11 +117,19 @@ class WhiteboardData {
     final builder = XmlBuilder();
     builder.processing('xml', 'version="1.0" encoding="UTF-8" standalone="no"');
     builder.element('svg', nest: () {
-      builder.attribute('viewbox', "0 0 ${size.width} ${size.height}");
+      builder.attribute('viewBox', "0 0 ${size.width} ${size.height}");
       builder.attribute('xmlns', "http://www.w3.org/2000/svg");
 
-      // Build up the eraser masks by iterating through the strokes in reverse
-      // order, since erasing strokes only apply to previously drawn strokes.
+      // Suppose that we have painted the strokes p_1, p_2, e_1, p_3, e_2 in
+      // this order, where p_i is a pen stroke and e_j is an erasing stroke.
+      // Then we see that the strokes p_1 and p_2 are masked by both e_1 and
+      // e_2, whilst the stroke p_3 is only masked by e_2.
+      // We therefore build up the eraser masks by iterating through the erasing
+      // strokes in reverse order: the initial mask m_0 doesn't mask anything;
+      // the next mask m_1 masks out the stroke e_2 on top of m_0, and is
+      // applied to p_3; the last mask m_2 masks the stroke e_1 on top of m_1,
+      // and is applied to p_1 and p_2.
+      // First we construct the masks as described above:
       var iEraser = 0;
       final eraserStrokes = strokes.where((stroke) => stroke.isErasing);
       builder.element('mask', nest: () {
@@ -113,7 +158,7 @@ class WhiteboardData {
             builder.attribute('mask', "url(#${eraserMaskId(iEraser - 1)})");
           });
 
-          // Add current eraser stroke
+          // Mask out current eraser stroke
           builder.element('path', nest: () {
             builder.attribute('d', lineCommands(eraserStroke.offsets));
             builder.attribute('fill', "transparent");
@@ -127,7 +172,7 @@ class WhiteboardData {
       }
       assert(iEraser == eraserStrokes.length);
 
-      // Draw all strokes, while applying appropriate eraser masks
+      // Now we add the pen strokes, while applying appropriate eraser masks:
       final eraserMaskedStrokes = <Stroke>[];
       for (final stroke in strokes) {
         if (stroke.isErasing) {
@@ -151,6 +196,7 @@ class WhiteboardData {
         }
       }
       assert(iEraser == 0);
+      // Draw the remaining pen strokes which aren't covered by eraser strokes
       for (final maskedStroke in eraserMaskedStrokes) {
         builder.element('path', nest: () {
           builder.attribute('d', lineCommands(maskedStroke.offsets));
@@ -167,7 +213,7 @@ class WhiteboardData {
     return builder.buildDocument();
   }
 
-  /// From (a subset of) a svg, where we only accept paths and masks for erasing
+  /// Parses a svg generated by the svg getter method.
   factory WhiteboardData.fromSvg(XmlDocument document) {
     Color fromHex(String hex) {
       assert(hex.length == 7 && hex[0] == '#');
@@ -179,11 +225,13 @@ class WhiteboardData {
 
     final svg = document.getElement('svg');
     assert(svg != null);
-    final viewBox = svg.getAttribute('viewbox').split(" ");
+    final viewBox = svg.getAttribute('viewBox').split(" ");
     assert(viewBox.length == 4);
+    assert(viewBox[0] == '0' && viewBox[1] == '0');
     final width = double.parse(viewBox[2]);
     final height = double.parse(viewBox[3]);
 
+    // Construct the erasing strokes from the masks
     final strokes = <Stroke>[];
     final eraserStrokes = <int, Stroke>{};
     for (final mask in svg.findElements('mask')) {
@@ -197,10 +245,12 @@ class WhiteboardData {
           isErasing: true,
           strokeWidth: strokeWidth,
         );
-        eraserStroke.addPath(path.getAttribute('d'));
+        eraserStroke.addSvgPath(path.getAttribute('d'));
         eraserStrokes[id] = eraserStroke;
       }
     }
+
+    // Draw the eraser strokes when the mask changes, and then the pen strokes
     var iEraser = eraserStrokes.length;
     for (final path in svg.findElements('path')) {
       final color = fromHex(path.getAttribute('stroke'));
@@ -210,7 +260,7 @@ class WhiteboardData {
         isErasing: false,
         strokeWidth: strokeWidth,
       );
-      stroke.addPath(path.getAttribute('d'));
+      stroke.addSvgPath(path.getAttribute('d'));
       final maskUrl = path.getAttribute('mask');
       final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
       assert(maskUrl == "url(#eraser$maskId)");
@@ -221,6 +271,7 @@ class WhiteboardData {
       }
       strokes.add(stroke);
     }
+    // Draw the remaining eraser strokes covering all pen strokes
     while (iEraser > 0) {
       strokes.add(eraserStrokes[iEraser]);
       iEraser -= 1;
@@ -232,10 +283,16 @@ class WhiteboardData {
     );
   }
 
+  /// Returns a scaled copy of this image that fits in [newSize].
+  ///
+  /// * Preserves aspect ratio, so scales to the minimum between the width ratio
+  /// and the height ratio;
+  /// * strokeWidths and each offset (representing the distance from the origin)
+  /// are scaled by this ratio;
+  /// * leaves this instance unchanged.
   WhiteboardData fit(Size newSize) {
     final widthRatio = newSize.width / size.width;
     final heightRatio = newSize.height / size.height;
-    // Preserve aspect ratio
     final ratio = min(widthRatio, heightRatio);
 
     final data = WhiteboardData(
@@ -259,6 +316,11 @@ class WhiteboardData {
   }
 }
 
+/// An unmodifiable [WhiteboardData] view of another WhiteboardData instance.
+///
+/// This class exposes only getters; it is not possible to mutate the fields of
+/// the underlying [_data] of this view via the returned values. In particular,
+/// each [Stroke] in the [strokes] are encapsulated by [UnmodifiableStrokeView].
 class UnmodifiableWhiteboardDataView {
   final WhiteboardData _data;
 

@@ -39,7 +39,7 @@ class MyHomePage extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => ChangeNotifierProvider(
-                create: (context) => WhiteboardModel(size: size),
+                create: (context) => WhiteboardModel.empty(size),
                 child: WhiteboardEditor(),
               ),
               fullscreenDialog: true,

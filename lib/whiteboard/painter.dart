@@ -26,7 +26,6 @@ class WhiteboardPainter extends CustomPainter {
         ..style = PaintingStyle.stroke;
 
       if (stroke.isErasing) {
-        paint.color = Colors.red;
         paint.blendMode = BlendMode.clear;
       } else {
         paint.color = stroke.color;
