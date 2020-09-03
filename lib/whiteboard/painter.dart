@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import './data.dart';
 
 class WhiteboardPainter extends CustomPainter {
-  final WhiteboardData _data;
+  final UnmodifiableWhiteboardDataView _data;
 
   WhiteboardPainter(this._data);
-
-  WhiteboardPainter.fit(WhiteboardData data, Size newSize)
-      : _data = data.fit(newSize);
 
   @override
   void paint(Canvas canvas, Size size) {

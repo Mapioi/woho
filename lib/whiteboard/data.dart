@@ -7,17 +7,13 @@ class Stroke {
   final Color color;
   final bool isErasing;
   final double strokeWidth;
-  final List<Offset> _offsets = [];
+  final List<Offset> offsets = [];
 
   Stroke({
     @required this.color,
     @required this.isErasing,
     @required this.strokeWidth,
   });
-
-  UnmodifiableListView<Offset> get offsets => UnmodifiableListView(_offsets);
-
-  void add(Offset offset) => _offsets.add(offset);
 
   void addPath(String path) {
     var i = 0;
@@ -29,12 +25,27 @@ class Stroke {
         x = double.parse(s);
       } else {
         y = double.parse(s);
-        _offsets.add(Offset(x, y));
+        offsets.add(Offset(x, y));
       }
 
       i += 1;
     }
   }
+}
+
+class UnmodifiableStrokeView {
+  final Stroke _stroke;
+
+  UnmodifiableStrokeView(this._stroke);
+
+  Color get color => _stroke.color;
+
+  bool get isErasing => _stroke.isErasing;
+
+  double get strokeWidth => _stroke.strokeWidth;
+
+  UnmodifiableListView<Offset> get offsets =>
+      UnmodifiableListView(_stroke.offsets);
 }
 
 class WhiteboardData {
@@ -43,7 +54,7 @@ class WhiteboardData {
 
   WhiteboardData(this.size, this.strokes);
 
-  XmlDocument toSvg() {
+  XmlDocument get svg {
     /// Convert Color instance to hex string
     String hex(Color c) {
       final r = c.red.toRadixString(16).padLeft(2, '0');
@@ -236,7 +247,7 @@ class WhiteboardData {
           strokeWidth: stroke.strokeWidth * ratio,
         );
         for (final offset in stroke.offsets) {
-          resizedStroke.add(Offset(
+          resizedStroke.offsets.add(Offset(
             offset.dx * ratio,
             offset.dy * ratio,
           ));
@@ -246,4 +257,19 @@ class WhiteboardData {
     );
     return data;
   }
+}
+
+class UnmodifiableWhiteboardDataView {
+  final WhiteboardData _data;
+
+  UnmodifiableWhiteboardDataView(this._data);
+
+  Size get size => _data.size;
+
+  UnmodifiableListView<UnmodifiableStrokeView> get strokes =>
+      UnmodifiableListView(
+        _data.strokes.map((stroke) => UnmodifiableStrokeView(stroke)),
+      );
+
+  XmlDocument get svg => _data.svg;
 }
