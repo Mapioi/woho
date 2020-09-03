@@ -37,90 +37,11 @@ class Stroke {
   }
 }
 
-// TODO merge with view
 class WhiteboardData {
-  Size _size;
+  final Size size;
   final List<Stroke> strokes;
 
-  WhiteboardData(this._size, this.strokes);
-
-  WhiteboardDataView get view => WhiteboardDataView(
-        _size,
-        UnmodifiableListView(strokes),
-      );
-
-  /// From (a subset of) a svg, where we only accept paths and masks for erasing
-  factory WhiteboardData.fromSvg(XmlDocument document) {
-    Color fromHex(String hex) {
-      assert(hex.length == 7 && hex[0] == '#');
-      final r = int.parse(hex.substring(1, 3), radix: 16);
-      final g = int.parse(hex.substring(3, 5), radix: 16);
-      final b = int.parse(hex.substring(5, 7), radix: 16);
-      return Color.fromRGBO(r, g, b, 1.0);
-    }
-
-    final svg = document.getElement('svg');
-    assert(svg != null);
-    final viewBox = svg.getAttribute('viewbox').split(" ");
-    assert(viewBox.length == 4);
-    final width = double.parse(viewBox[2]);
-    final height = double.parse(viewBox[3]);
-
-    final strokes = <Stroke>[];
-    final eraserStrokes = <int, Stroke>{};
-    for (final mask in svg.findElements('mask')) {
-      final idString = mask.getAttribute('id');
-      final id = int.parse(idString.split('eraser')[1]);
-      if (id != 0) {
-        final path = mask.getElement('path');
-        final strokeWidth = double.parse(path.getAttribute('stroke-width'));
-        final eraserStroke = Stroke(
-          color: null,
-          isErasing: true,
-          strokeWidth: strokeWidth,
-        );
-        eraserStroke.addPath(path.getAttribute('d'));
-        eraserStrokes[id] = eraserStroke;
-      }
-    }
-    var iEraser = eraserStrokes.length;
-    for (final path in svg.findElements('path')) {
-      final color = fromHex(path.getAttribute('stroke'));
-      final strokeWidth = double.parse(path.getAttribute('stroke-width'));
-      final stroke = Stroke(
-        color: color,
-        isErasing: false,
-        strokeWidth: strokeWidth,
-      );
-      stroke.addPath(path.getAttribute('d'));
-      final maskUrl = path.getAttribute('mask');
-      final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
-      assert(maskUrl == "url(#eraser$maskId)");
-      assert(maskId <= iEraser);
-      while (iEraser > max(1, maskId)) {
-        strokes.add(eraserStrokes[iEraser]);
-        iEraser -= 1;
-      }
-      strokes.add(stroke);
-    }
-    while (iEraser > 0) {
-      strokes.add(eraserStrokes[iEraser]);
-      iEraser -= 1;
-    }
-
-    return WhiteboardData(
-      Size(width, height),
-      strokes,
-    );
-  }
-}
-
-/// Unmodifiable view of whiteboard data
-class WhiteboardDataView {
-  final Size size;
-  final UnmodifiableListView<Stroke> strokes;
-
-  WhiteboardDataView(this.size, this.strokes);
+  WhiteboardData(this.size, this.strokes);
 
   XmlDocument toSvg() {
     /// Convert Color instance to hex string
@@ -233,5 +154,70 @@ class WhiteboardDataView {
     });
 
     return builder.buildDocument();
+  }
+
+  /// From (a subset of) a svg, where we only accept paths and masks for erasing
+  factory WhiteboardData.fromSvg(XmlDocument document) {
+    Color fromHex(String hex) {
+      assert(hex.length == 7 && hex[0] == '#');
+      final r = int.parse(hex.substring(1, 3), radix: 16);
+      final g = int.parse(hex.substring(3, 5), radix: 16);
+      final b = int.parse(hex.substring(5, 7), radix: 16);
+      return Color.fromRGBO(r, g, b, 1.0);
+    }
+
+    final svg = document.getElement('svg');
+    assert(svg != null);
+    final viewBox = svg.getAttribute('viewbox').split(" ");
+    assert(viewBox.length == 4);
+    final width = double.parse(viewBox[2]);
+    final height = double.parse(viewBox[3]);
+
+    final strokes = <Stroke>[];
+    final eraserStrokes = <int, Stroke>{};
+    for (final mask in svg.findElements('mask')) {
+      final idString = mask.getAttribute('id');
+      final id = int.parse(idString.split('eraser')[1]);
+      if (id != 0) {
+        final path = mask.getElement('path');
+        final strokeWidth = double.parse(path.getAttribute('stroke-width'));
+        final eraserStroke = Stroke(
+          color: null,
+          isErasing: true,
+          strokeWidth: strokeWidth,
+        );
+        eraserStroke.addPath(path.getAttribute('d'));
+        eraserStrokes[id] = eraserStroke;
+      }
+    }
+    var iEraser = eraserStrokes.length;
+    for (final path in svg.findElements('path')) {
+      final color = fromHex(path.getAttribute('stroke'));
+      final strokeWidth = double.parse(path.getAttribute('stroke-width'));
+      final stroke = Stroke(
+        color: color,
+        isErasing: false,
+        strokeWidth: strokeWidth,
+      );
+      stroke.addPath(path.getAttribute('d'));
+      final maskUrl = path.getAttribute('mask');
+      final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
+      assert(maskUrl == "url(#eraser$maskId)");
+      assert(maskId <= iEraser);
+      while (iEraser > max(1, maskId)) {
+        strokes.add(eraserStrokes[iEraser]);
+        iEraser -= 1;
+      }
+      strokes.add(stroke);
+    }
+    while (iEraser > 0) {
+      strokes.add(eraserStrokes[iEraser]);
+      iEraser -= 1;
+    }
+
+    return WhiteboardData(
+      Size(width, height),
+      strokes,
+    );
   }
 }

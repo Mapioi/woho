@@ -15,10 +15,10 @@ const mockSvg = """
 
 class WhiteboardModel extends ChangeNotifier with Undoable {
   WhiteboardModel({@required this.size})
-      : _data = WhiteboardData.fromSvg(XmlDocument.parse(mockSvg));
+      : data = WhiteboardData.fromSvg(XmlDocument.parse(mockSvg));
 
   final Size size;
-  final WhiteboardData _data;
+  final WhiteboardData data;
   Stroke _currentStroke;
   Tool _tool = Tool.pen;
 
@@ -90,8 +90,6 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
     notifyListeners();
   }
 
-  WhiteboardDataView get data => _data.view;
-
   Tool get tool => _tool;
 
   set tool(newTool) {
@@ -110,19 +108,19 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
         );
         _currentStroke.add(event.localPosition);
         execute(Command(() {
-          _data.strokes.add(_currentStroke);
+          data.strokes.add(_currentStroke);
           notifyListeners();
 
-          final i = _data.strokes.length - 1;
+          final i = data.strokes.length - 1;
           final strokeRef = _currentStroke; // (Ab)using the mutable stroke
           return Change(
             undo: () {
-              _data.strokes.remove(strokeRef);
-              assert(!_data.strokes.contains(strokeRef));
+              data.strokes.remove(strokeRef);
+              assert(!data.strokes.contains(strokeRef));
               notifyListeners();
             },
             redo: () {
-              _data.strokes.insert(i, strokeRef);
+              data.strokes.insert(i, strokeRef);
               notifyListeners();
             },
           );

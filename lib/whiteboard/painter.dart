@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import './data.dart';
 
 class WhiteboardPainter extends CustomPainter {
-  final WhiteboardDataView _data;
+  final WhiteboardData _data;
 
   WhiteboardPainter(this._data);
 
