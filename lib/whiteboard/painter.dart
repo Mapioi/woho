@@ -6,6 +6,9 @@ class WhiteboardPainter extends CustomPainter {
 
   WhiteboardPainter(this._data);
 
+  WhiteboardPainter.fit(WhiteboardData data, Size newSize)
+      : _data = data.fit(newSize);
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());

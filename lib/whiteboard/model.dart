@@ -15,7 +15,7 @@ const mockSvg = """
 
 class WhiteboardModel extends ChangeNotifier with Undoable {
   WhiteboardModel({@required this.size})
-      : data = WhiteboardData.fromSvg(XmlDocument.parse(mockSvg));
+      : data = WhiteboardData.fromSvg(XmlDocument.parse(mockSvg)).fit(size);
 
   final Size size;
   final WhiteboardData data;

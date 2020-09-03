@@ -220,4 +220,30 @@ class WhiteboardData {
       strokes,
     );
   }
+
+  WhiteboardData fit(Size newSize) {
+    final widthRatio = newSize.width / size.width;
+    final heightRatio = newSize.height / size.height;
+    // Preserve aspect ratio
+    final ratio = min(widthRatio, heightRatio);
+
+    final data = WhiteboardData(
+      newSize,
+      strokes.map((stroke) {
+        final resizedStroke = Stroke(
+          color: stroke.color,
+          isErasing: stroke.isErasing,
+          strokeWidth: stroke.strokeWidth * ratio,
+        );
+        for (final offset in stroke.offsets) {
+          resizedStroke.add(Offset(
+            offset.dx * ratio,
+            offset.dy * ratio,
+          ));
+        }
+        return resizedStroke;
+      }).toList(),
+    );
+    return data;
+  }
 }
