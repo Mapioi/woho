@@ -1,6 +1,41 @@
 import 'package:flutter/material.dart';
 import './model.dart';
 
+/// The leading close button on the top left of the app bar.
+///
+/// Launches an alert dialog if the changes have not been saved.
+Widget closeButton(BuildContext context, WhiteboardModel model) {
+  return IconButton(
+    icon: Icon(Icons.close),
+    onPressed: model.isSaved()
+        ? () => Navigator.of(context).pop()
+        : () {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text("Unsaved Changes"),
+                content: Text("Do you want to discard unsaved changes?"),
+                actions: <Widget>[
+                  FlatButton(
+                    child: Text("Yes"),
+                    onPressed: () {
+                      // Pop alert dialog.
+                      Navigator.of(context).pop();
+                      // Pop editor page.
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  FlatButton(
+                    child: Text("No"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            );
+          },
+  );
+}
+
 List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
   final strokeWidthDropdown = DropdownButton<double>(
     items: WhiteboardModel.strokeWidthChoices[model.tool].map((w) {
@@ -56,11 +91,9 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
     );
   }
 
-  final printSvgButton = IconButton(
-    icon: Icon(Icons.print),
-    onPressed: () {
-      print(model.data.svg.toString());
-    },
+  final saveButton = IconButton(
+    icon: Icon(Icons.save),
+    onPressed: model.isSaved() ? null : model.save,
   );
 
   final undoButton = IconButton(
@@ -73,7 +106,7 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
     onPressed: model.canRedo() ? model.redo : null,
   );
 
-  final buttons = <Widget>[printSvgButton, strokeWidthDropdown, colorDropdown]
+  final buttons = <Widget>[saveButton, strokeWidthDropdown, colorDropdown]
     ..addAll(Tool.values.map(makeToolButton))
     ..addAll([undoButton, redoButton]);
 

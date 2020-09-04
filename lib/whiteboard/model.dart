@@ -155,4 +155,11 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
       }
     }
   }
+
+  @override
+  void save() {
+    super.save();
+    notifyListeners();
+    print(_data.svg.toXmlString(pretty: true));
+  }
 }

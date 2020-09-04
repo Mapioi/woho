@@ -23,6 +23,7 @@ class WhiteboardEditor extends StatelessWidget {
         appBar: AppBar(
           title: Text("Edit Flashcard"),
           actions: toolbarButtons(context, model),
+          leading: closeButton(context, model),
         ),
         body: Listener(
           child: CustomPaint(
