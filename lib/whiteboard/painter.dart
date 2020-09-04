@@ -15,6 +15,8 @@ class WhiteboardPainter extends CustomPainter {
       assert(stroke.offsets.isNotEmpty);
       final offset0 = stroke.offsets.first;
       path.moveTo(offset0.dx, offset0.dy);
+      // Note that first a line is drawn from offset0 to itself, so that a
+      // stroke with one single offset (a point) will be rendered too.
       for (final offset in stroke.offsets) {
         path.lineTo(offset.dx, offset.dy);
       }

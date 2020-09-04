@@ -34,23 +34,23 @@ class Stroke {
   /// s.offsets.length == 3
   /// ```
   void addSvgPath(String path) {
-    var i = 0;
+    final params = path.split(" ");
     double x, y;
-    for (final s in path.split(" ")) {
+    assert(params[0] == 'M');
+    final x0 = double.parse(params[1]);
+    final y0 = double.parse(params[2]);
+    for (var i = 3; i < params.length; i += 1) {
+      final s = params[i];
       if (i % 3 == 0) {
-        if (i == 0) {
-          assert(s == 'M');
-        } else {
-          assert(s == 'L');
-        }
+        assert(s == 'L');
       } else if (i % 3 == 1) {
         x = double.parse(s);
+        if (i == 4) assert(x == x0);
       } else {
         y = double.parse(s);
+        if (i == 5) assert(y == y0);
         offsets.add(Offset(x, y));
       }
-
-      i += 1;
     }
   }
 }
