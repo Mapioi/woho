@@ -24,6 +24,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  path_provider:
+
   provider:
 
   xml:
