@@ -68,6 +68,11 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   Directory get wd => _wd;
 
+  Directory get parentDir {
+    assert(canCdUp()); // not home
+    return _pastDirs[_pastDirs.length - 2];
+  }
+
   List<Directory> _pastDirs;
 
   void cd(Directory dir) {
@@ -85,7 +90,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  createFolder(Directory dir) {
+  _createDirectory(Directory dir) {
     assert(!dir.existsSync());
     dir.createSync();
     assert(dir.existsSync());
@@ -94,6 +99,10 @@ class FlashcardExplorerModel extends ChangeNotifier {
     wdConfig.orderedContents.add(relativeName(_wd, dir));
     final wdConfigFile = configFile(_wd);
     wdConfigFile.writeAsStringSync(jsonEncode(wdConfig.toJson()));
+  }
+
+  createFolder(Directory dir) {
+    _createDirectory(dir);
 
     final newConfigFile = configFile(dir);
     assert(!newConfigFile.existsSync());
@@ -104,6 +113,27 @@ class FlashcardExplorerModel extends ChangeNotifier {
     newConfigFile.writeAsString(jsonEncode(newConfigJson));
 
     assert(newConfigFile.existsSync());
+  }
+
+  renameWd(String newPath) {
+    assert(!Directory(newPath).existsSync());
+
+    final renamedWd = _wd.renameSync(newPath);
+
+    final oldName = relativeName(parentDir, _wd);
+    final newName = relativeName(parentDir, renamedWd);
+
+    _wd = renamedWd;
+    _pastDirs.last = renamedWd;
+
+    final parentConfig = config(parentDir);
+    final index = parentConfig.orderedContents.indexOf(oldName);
+    assert(index != -1);
+    parentConfig.orderedContents[index] = newName;
+    final parentConfigFile = configFile(parentDir);
+    parentConfigFile.writeAsStringSync(jsonEncode(parentConfig.toJson()));
+
+    notifyListeners();
   }
 
 }

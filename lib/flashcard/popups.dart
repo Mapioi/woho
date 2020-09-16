@@ -35,7 +35,7 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
   Directory get _directory => Directory(widget.root.path + "/" + _input);
 
   String get _errorText {
-    switch(_status) {
+    switch (_status) {
       case DirectoryNameStatus.alreadyExists:
         return "$_input already exists.";
       case DirectoryNameStatus.empty:
@@ -45,6 +45,7 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
       case DirectoryNameStatus.ok:
         return null;
     }
+    return "Unexpected error";
   }
 
   void _onInputChange(String newInput) {

@@ -112,6 +112,25 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  void _onRenameFolder(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DirectoryNameDialogue(
+          root: model.parentDir,
+          title: Chip(
+            label: Text("Rename folder"),
+            avatar: Icon(Icons.folder),
+          ),
+          hintText: relativeName(model.parentDir, model.wd),
+          onDone: (Directory newDir) {
+            model.renameWd(newDir.path);
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,6 +144,12 @@ class _FlashcardExplorerView extends StatelessWidget {
           model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
         ),
         actions: [
+          if (model.canCdUp() && !isFlashcard(model.wd))
+            IconButton(
+              tooltip: "Rename folder",
+              icon: Icon(Icons.drive_file_rename_outline),
+              onPressed: () => _onRenameFolder(context),
+            ),
           if (!isFlashcard(model.wd))
             IconButton(
               tooltip: "New folder",
