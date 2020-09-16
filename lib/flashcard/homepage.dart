@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import './config.dart';
 import './popups.dart';
 
 class FlashcardsHomepage extends StatefulWidget {
@@ -13,6 +15,12 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
   void initState() {
     getApplicationDocumentsDirectory().then(
       (dir) {
+        final configFile = File(dir.path + '/config.json');
+        if (!configFile.existsSync()) {
+          configFile.createSync();
+          final configJson = Config.empty().toJson();
+          configFile.writeAsStringSync(jsonEncode(configJson));
+        }
         setState(() {
           _wd = dir;
           _pastDirs = [dir];
@@ -25,11 +33,32 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
   Directory _wd;
   List<Directory> _pastDirs;
 
+  File _configFile(Directory dir) {
+    return File(dir.path + '/config.json');
+  }
+
+  Config _config(Directory dir) {
+    assert(!_isFlashcard(dir));
+    try { // Put here since this issue disappeared after I tried to print
+      final configJson = jsonDecode(_configFile(dir).readAsStringSync());
+      return Config.fromJson(configJson);
+    } on FormatException catch(_) {
+      print(_configFile(dir).readAsStringSync());
+      return Config.empty();
+    }
+  }
+
   bool _isFlashcard(Directory dir) {
+    final configFile = File(dir.path + '/config.json');
     final ls = dir.listSync();
     final nbFiles = ls.where((entity) => entity is File).length;
-    // assert(nbFiles == 1 || nbFiles == 3); // config [+ front, back.svg]
-    return nbFiles == 3;
+    if (configFile.existsSync()) {
+      assert(nbFiles == 1); // only config.json
+      return false;
+    } else {
+      assert(nbFiles == 2); // front.svg and back.svg
+      return true;
+    }
   }
 
   void _cd(Directory dir) {
@@ -48,19 +77,22 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
     });
   }
 
-  String _relativeName(Directory root, Directory dir) {
-    assert(dir.path.startsWith(root.path));
-    final relativeName = dir.path.substring(root.path.length);
+  String _relativeName(Directory root, FileSystemEntity f) {
+    assert(f.path.startsWith(root.path));
+    final relativeName = f.path.substring(root.path.length);
     return relativeName;
   }
 
   Widget _buildDirectory(Directory dir) {
-    final icon = _isFlashcard(dir) ? Icon(Icons.copy) : Icon(Icons.folder);
+    final isFlashcard = _isFlashcard(dir);
+    final icon = isFlashcard ? Icon(Icons.copy) : Icon(Icons.folder);
+    final color = isFlashcard ? null : Color(_config(dir).colourValue);
     return Column(
       children: [
         IconButton(
           iconSize: 100,
           icon: icon,
+          color: color,
           tooltip: dir.path,
           // On tap, cd to the folder
           onPressed: () => _cd(dir),
@@ -70,7 +102,13 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
     );
   }
 
+  String _extension(File file) {
+    assert(file.path.split('.').length >= 2);
+    return file.path.split('.').last;
+  }
+
   Widget _buildFile(File file) {
+    assert(_extension(file) == 'svg');
     return IconButton(
       iconSize: 100,
       icon: Icon(Icons.image),
@@ -79,7 +117,13 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
   }
 
   Widget _buildBody(List<FileSystemEntity> ls) {
-    if (ls.isEmpty)
+    final lsFiltered = ls
+        .where((entity) =>
+            entity is Directory ||
+            (entity is File && _extension(entity) == 'svg'))
+        .toList();
+
+    if (lsFiltered.isEmpty)
       return Center(
         child: Chip(
           avatar: Icon(Icons.folder_open),
@@ -91,9 +135,9 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 150,
       ),
-      itemCount: ls.length,
+      itemCount: lsFiltered.length,
       itemBuilder: (context, i) {
-        final entity = ls[i];
+        final entity = lsFiltered[i];
         if (entity is Directory) {
           return _buildDirectory(entity);
         }
@@ -120,17 +164,22 @@ class _FlashcardsHomepageState extends State<FlashcardsHomepage> {
             dir.createSync();
             assert(dir.existsSync());
 
+            final wdConfig = _config(_wd);
+            wdConfig.orderedContents.add(_relativeName(_wd, dir));
+            final wdConfigFile = _configFile(_wd);
+            wdConfigFile.writeAsStringSync(jsonEncode(wdConfig.toJson()));
+
+            final newConfigFile = _configFile(dir);
+            assert(!newConfigFile.existsSync());
+
+            newConfigFile.createSync();
+            final newConfig = Config.empty();
+            final newConfigJson = newConfig.toJson();
+            newConfigFile.writeAsString(jsonEncode(newConfigJson));
+
+            assert(newConfigFile.existsSync());
+
             _cd(dir);
-
-            final configFile = File(dir.path + "/config.json");
-
-            assert(!configFile.existsSync());
-
-            // TODO write config; maybe replace json with yaml
-            configFile.createSync();
-            configFile.writeAsString("");
-
-            assert(configFile.existsSync());
           },
         );
       },
