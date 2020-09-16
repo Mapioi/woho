@@ -113,6 +113,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     newConfigFile.writeAsString(jsonEncode(newConfigJson));
 
     assert(newConfigFile.existsSync());
+    notifyListeners();
   }
 
   renameWd(String newPath) {
@@ -133,6 +134,20 @@ class FlashcardExplorerModel extends ChangeNotifier {
     final parentConfigFile = configFile(parentDir);
     parentConfigFile.writeAsStringSync(jsonEncode(parentConfig.toJson()));
 
+    notifyListeners();
+  }
+
+  deleteWdAndCdUp() {
+    assert(canCdUp());
+    final wdName = relativeName(parentDir, _wd);
+
+    final parentConfig = config(parentDir);
+    final isRemoved = parentConfig.orderedContents.remove(wdName);
+    assert(isRemoved);
+    final parentConfigFile = configFile(parentDir);
+    parentConfigFile.writeAsStringSync(jsonEncode(parentConfig.toJson()));
+
+    cdUp();
     notifyListeners();
   }
 

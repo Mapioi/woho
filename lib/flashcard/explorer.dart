@@ -71,7 +71,7 @@ class _FlashcardExplorerView extends StatelessWidget {
     if (contents.isEmpty)
       return Center(
         child: Chip(
-          avatar: Icon(Icons.folder_open),
+          avatar: Icon(Icons.self_improvement),
           label: Text("Wow, such empty"),
         ),
       );
@@ -93,6 +93,7 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onCreateFolder(BuildContext context) {
+    assert(!isFlashcard(model.wd));
     showDialog(
       context: context,
       builder: (context) {
@@ -131,6 +132,31 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  void _onDeleteFolder(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("This folder will be deleted forever."),
+        actions: [
+          FlatButton(
+            child: Text(
+              "Delete",
+              style: TextStyle(color: Colors.redAccent),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              model.deleteWdAndCdUp();
+            },
+          ),
+          FlatButton(
+            child: Text("Abort"),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,17 +170,23 @@ class _FlashcardExplorerView extends StatelessWidget {
           model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
         ),
         actions: [
+          if (!isFlashcard(model.wd))
+            IconButton(
+              tooltip: "New folder",
+              icon: Icon(Icons.create_new_folder),
+              onPressed: () => _onCreateFolder(context),
+            ),
           if (model.canCdUp() && !isFlashcard(model.wd))
             IconButton(
               tooltip: "Rename folder",
               icon: Icon(Icons.drive_file_rename_outline),
               onPressed: () => _onRenameFolder(context),
             ),
-          if (!isFlashcard(model.wd))
+          if (model.canCdUp() && !isFlashcard(model.wd))
             IconButton(
-              tooltip: "New folder",
-              icon: Icon(Icons.create_new_folder),
-              onPressed: () => _onCreateFolder(context),
+              tooltip: "Delete folder",
+              icon: Icon(Icons.delete),
+              onPressed: () => _onDeleteFolder(context),
             ),
         ],
       ),
