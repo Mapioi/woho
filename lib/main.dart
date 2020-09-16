@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import './flashcard/homepage.dart';
+import './flashcard/explorer.dart';
 import './whiteboard/model.dart';
 import './whiteboard/editor.dart';
 
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return FlashcardsHomepage();
+    return FlashcardExplorer();
 
     final size = MediaQuery.of(context).size;
 
