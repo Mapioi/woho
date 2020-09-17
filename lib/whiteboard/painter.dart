@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import './data.dart';
 
@@ -8,6 +10,28 @@ class WhiteboardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (_data.title != null) {
+      final phi = (1 + sqrt(5)) / 2;
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: _data.title,
+          style: TextStyle(color: Colors.black),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        textScaleFactor: 5,
+      );
+      tp.layout();
+      tp.paint(
+        canvas,
+        Offset(
+          (size.width - tp.width) / 2,
+          (size.height - tp.height) / (1 + phi),
+        ),
+      );
+    }
+
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
 
     for (final stroke in _data.strokes) {

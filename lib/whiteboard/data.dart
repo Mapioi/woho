@@ -78,8 +78,9 @@ class UnmodifiableStrokeView {
 class WhiteboardData {
   final Size size;
   final List<Stroke> strokes;
+  final String title;
 
-  WhiteboardData(this.size, this.strokes);
+  WhiteboardData(this.size, this.strokes, {this.title});
 
   /// Generates an svg document that produces the same image as painted by a
   /// [WhiteboardPainter].
@@ -119,6 +120,22 @@ class WhiteboardData {
     builder.element('svg', nest: () {
       builder.attribute('viewBox', "0 0 ${size.width} ${size.height}");
       builder.attribute('xmlns', "http://www.w3.org/2000/svg");
+
+      // Title
+      if (title != null) {
+        builder.element('text', nest: () {
+          final phi = (1 + sqrt(5)) / 2;
+
+          final x = size.width / 2;
+          final y = size.height * phi / (1 + phi);
+          builder.attribute('x', x);
+          builder.attribute('y', y);
+          builder.attribute('font-size', 64);
+          builder.attribute('text-anchor', 'middle');
+
+          builder.text(title);
+        });
+      }
 
       // Suppose that we have painted the strokes p_1, p_2, e_1, p_3, e_2 in
       // this order, where p_i is a pen stroke and e_j is an erasing stroke.
@@ -277,9 +294,17 @@ class WhiteboardData {
       iEraser -= 1;
     }
 
+    String title;
+    final texts = svg.findElements('text');
+    assert(texts.length <= 1);
+    if (texts.isNotEmpty) {
+      title = texts.first.text;
+    }
+
     return WhiteboardData(
       Size(width, height),
       strokes,
+      title: title,
     );
   }
 
@@ -311,6 +336,7 @@ class WhiteboardData {
         }
         return resizedStroke;
       }).toList(),
+      title: title,
     );
     return data;
   }
@@ -332,6 +358,8 @@ class UnmodifiableWhiteboardDataView {
       UnmodifiableListView(
         _data.strokes.map((stroke) => UnmodifiableStrokeView(stroke)),
       );
+
+  String get title => _data.title;
 
   XmlDocument get svg => _data.svg;
 }
