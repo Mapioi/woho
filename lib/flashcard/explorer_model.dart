@@ -51,6 +51,7 @@ bool isFlashcard(Directory dir) {
     assert(nbFiles == 1); // only config.json
     return false;
   } else {
+    // TODO relax to allow for file signifying the flashcard is starred
     assert(nbFiles == 2); // front.svg and back.svg
     return true;
   }
@@ -194,6 +195,15 @@ class FlashcardExplorerModel extends ChangeNotifier {
     parentConfigFile.writeAsStringSync(jsonEncode(parentConfig.toJson()));
 
     cdUp();
+    notifyListeners();
+  }
+
+  reorderContents(int oldIndex, int newIndex) {
+    final wdConfig = config(_wd);
+    final movedEntity = wdConfig.orderedContents.removeAt(oldIndex);
+    wdConfig.orderedContents.insert(newIndex, movedEntity);
+    final newJsonStr = jsonEncode(wdConfig.toJson());
+    configFile(_wd).writeAsStringSync(newJsonStr);
     notifyListeners();
   }
 }

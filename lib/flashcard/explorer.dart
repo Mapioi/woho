@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderables/reorderables.dart';
 import './explorer_model.dart';
 import './popups.dart';
 import '../whiteboard/editor.dart';
@@ -41,35 +42,35 @@ class _FlashcardExplorerView extends StatelessWidget {
 
   _FlashcardExplorerView(this.model);
 
-  Widget _buildFolderTile(Directory dir) {
-    IconData iconData;
-    Color color;
+  Widget _buildFolder() {
+    Widget _buildFolderTile(Directory dir) {
+      IconData iconData;
+      Color color;
 
-    if (isFlashcard(dir)) {
-      iconData = Icons.copy;
-      color = null;
-    } else {
-      iconData = Icons.folder;
-      color = Color(config(dir).colourValue);
+      if (isFlashcard(dir)) {
+        iconData = Icons.copy;
+        color = null;
+      } else {
+        iconData = Icons.folder;
+        color = Color(config(dir).colourValue);
+      }
+
+      return GestureDetector(
+        child: Column(
+          children: [
+            Icon(
+              iconData,
+              color: color,
+              size: 125,
+            ),
+            Text(relativeName(model.wd, dir)),
+          ],
+        ),
+        // On tap, cd to the folder
+        onTap: () => model.cd(dir),
+      );
     }
 
-    return GestureDetector(
-      child: Column(
-        children: [
-          Icon(
-            iconData,
-            color: color,
-            size: 100,
-          ),
-          Text(relativeName(model.wd, dir)),
-        ],
-      ),
-      // On tap, cd to the folder
-      onTap: () => model.cd(dir),
-    );
-  }
-
-  Widget _buildFolder() {
     final contents = config(model.wd).orderedContents;
     if (contents.isEmpty)
       return Center(
@@ -79,43 +80,43 @@ class _FlashcardExplorerView extends StatelessWidget {
         ),
       );
 
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 150,
-      ),
-      itemCount: contents.length,
-      itemBuilder: (context, i) {
-        final dir = Directory(model.wd.path + '/' + contents[i]);
+    return ReorderableWrap(
+      children: contents.map((f) {
+        final dir = Directory(model.wd.path + '/' + f);
         return _buildFolderTile(dir);
-      },
-    );
-  }
-
-  Widget _buildFlashcardTile(
-    BuildContext context,
-    IconData iconData,
-    String fileName,
-    onTap,
-  ) {
-    return GestureDetector(
-      child: Column(
-        children: [
-          Icon(
-            iconData,
-            size: 100,
-          ),
-          Text(fileName),
-        ],
-      ),
-      onTap: onTap,
+      }).toList(),
+      onReorder: model.reorderContents,
+      spacing: 10.0,
+      runSpacing: 10.0,
+      padding: EdgeInsets.all(10.0),
     );
   }
 
   Widget _buildFlashcard(BuildContext context) {
-    return GridView(
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 150,
-      ),
+    Widget _buildFlashcardTile(
+        BuildContext context,
+        IconData iconData,
+        String fileName,
+        onTap,
+        ) {
+      return GestureDetector(
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            children: [
+              Icon(
+                iconData,
+                size: 125,
+              ),
+              Text(fileName),
+            ],
+          ),
+        ),
+        onTap: onTap,
+      );
+    }
+
+    return Row(
       children: [
         _buildFlashcardTile(
           context,
