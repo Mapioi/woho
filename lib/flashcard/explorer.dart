@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import './explorer_model.dart';
 import './popups.dart';
+import '../whiteboard/editor.dart';
 
 class FlashcardExplorer extends StatefulWidget {
   @override
@@ -52,17 +53,19 @@ class _FlashcardExplorerView extends StatelessWidget {
       color = Color(config(dir).colourValue);
     }
 
-    return Column(
-      children: [
-        IconButton(
-          iconSize: 100,
-          icon: Icon(iconData),
-          color: color,
-          // On tap, cd to the folder
-          onPressed: () => model.cd(dir),
-        ),
-        Text(relativeName(model.wd, dir)),
-      ],
+    return GestureDetector(
+      child: Column(
+        children: [
+          Icon(
+            iconData,
+            color: color,
+            size: 100,
+          ),
+          Text(relativeName(model.wd, dir)),
+        ],
+      ),
+      // On tap, cd to the folder
+      onTap: () => model.cd(dir),
     );
   }
 
@@ -88,8 +91,46 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  Widget _buildFlashcard() {
-    return Text("front.svg, back.svg");
+  Widget _buildFlashcardTile(
+    BuildContext context,
+    IconData iconData,
+    String fileName,
+    onTap,
+  ) {
+    return GestureDetector(
+      child: Column(
+        children: [
+          Icon(
+            iconData,
+            size: 100,
+          ),
+          Text(fileName),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildFlashcard(BuildContext context) {
+    return GridView(
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 150,
+      ),
+      children: [
+        _buildFlashcardTile(
+          context,
+          Icons.flip_to_front,
+          "front.svg",
+          () => _onOpenFront(context),
+        ),
+        _buildFlashcardTile(
+          context,
+          Icons.flip_to_back,
+          "back.svg",
+          () => _onOpenBack(context),
+        )
+      ],
+    );
   }
 
   void _onCreateFolder(BuildContext context) {
@@ -106,6 +147,27 @@ class _FlashcardExplorerView extends StatelessWidget {
           hintText: "Untitled Folder",
           onDone: (Directory dir) {
             model.createFolder(dir);
+            model.cd(dir);
+          },
+        );
+      },
+    );
+  }
+
+  void _onCreateFlashcard(BuildContext context) {
+    assert(!isFlashcard(model.wd));
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DirectoryNameDialogue(
+          root: model.wd,
+          title: Chip(
+            label: Text("New flashcard"),
+            avatar: Icon(Icons.copy),
+          ),
+          hintText: "Untitled flashcard",
+          onDone: (Directory dir) {
+            model.createFlashcard(dir);
             model.cd(dir);
           },
         );
@@ -157,6 +219,29 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  void _onEditFlashcard(BuildContext context, File svg) {
+    final size = MediaQuery.of(context).size;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (context) => svgModel(svg, size),
+          child: WhiteboardEditor(),
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  void _onOpenFront(BuildContext context) {
+    _onEditFlashcard(context, frontSvg(model.wd));
+  }
+
+  void _onOpenBack(BuildContext context) {
+    _onEditFlashcard(context, backSvg(model.wd));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,7 +254,14 @@ class _FlashcardExplorerView extends StatelessWidget {
         title: Text(
           model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
         ),
+        centerTitle: true,
         actions: [
+          if (!isFlashcard(model.wd))
+            IconButton(
+              tooltip: "New flashcard",
+              icon: Icon(Icons.copy),
+              onPressed: () => _onCreateFlashcard(context),
+            ),
           if (!isFlashcard(model.wd))
             IconButton(
               tooltip: "New folder",
@@ -190,7 +282,7 @@ class _FlashcardExplorerView extends StatelessWidget {
             ),
         ],
       ),
-      body: isFlashcard(model.wd) ? _buildFlashcard() : _buildFolder(),
+      body: isFlashcard(model.wd) ? _buildFlashcard(context) : _buildFolder(),
     );
   }
 }

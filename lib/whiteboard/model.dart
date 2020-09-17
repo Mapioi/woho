@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import './history.dart';
 import './data.dart';
 
+typedef CallbackTakingString = void Function(String);
+
 enum Tool {
   /// Produces a pen stroke following the stylus position with
   /// [WhiteboardModel.strokeWidth] and [WhiteboardModel.color].
@@ -21,11 +23,10 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   /// Create a whiteboard rendering the data.
   ///
   /// It is assumed that [_data]'s dimension fits inside the canvas size.
-  WhiteboardModel(this._data);
-
-  WhiteboardModel.empty(Size size) : _data = WhiteboardData(size, []);
+  WhiteboardModel(this._data, this._onSave);
 
   final WhiteboardData _data;
+  final CallbackTakingString _onSave;
   Stroke _currentStroke;
   Tool _tool = Tool.pen;
 
@@ -160,6 +161,6 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   void save() {
     super.save();
     notifyListeners();
-    print(_data.svg.toXmlString(pretty: true));
+    _onSave(_data.svg.toXmlString(pretty: true));
   }
 }

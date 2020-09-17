@@ -1,7 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:xml/xml.dart';
 import './config.dart';
+import '../whiteboard/data.dart';
+import '../whiteboard/model.dart';
+
+File frontSvg(Directory dir) {
+  return File(dir.path + '/front.svg');
+}
+
+File backSvg(Directory dir) {
+  return File(dir.path + '/back.svg');
+}
+
+WhiteboardModel svgModel(File svgFile, Size canvasSize) {
+  assert(svgFile.existsSync());
+  final xml = XmlDocument.parse(svgFile.readAsStringSync());
+  final data = WhiteboardData.fromSvg(xml);
+  final model = WhiteboardModel(
+    data.fit(canvasSize),
+    (xmlString) {
+      svgFile.writeAsStringSync(xmlString);
+    },
+  );
+  return model;
+}
 
 File configFile(Directory dir) {
   return File(dir.path + '/config.json');
@@ -10,7 +34,8 @@ File configFile(Directory dir) {
 Config config(Directory dir) {
   assert(configFile(dir).existsSync());
   final configStr = configFile(dir).readAsStringSync();
-  try { // Put here since this issue disappeared after I tried to print
+  try {
+    // Put here since this issue disappeared after I tried to print
     final configJson = jsonDecode(configStr);
     return Config.fromJson(configJson);
   } on FormatException catch (_) {
@@ -116,6 +141,28 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  createFlashcard(Directory dir) {
+    final name = relativeName(_wd, dir);
+    _createDirectory(dir);
+
+    final front = frontSvg(dir);
+    final back = backSvg(dir);
+    assert(!front.existsSync());
+    assert(!back.existsSync());
+
+    final size = Size(1024, 768);
+
+    front.createSync();
+    final frontData = WhiteboardData(size, [], title: name);
+    front.writeAsStringSync(frontData.svg.toXmlString(pretty: true));
+    print(frontData.svg.toXmlString(pretty: true));
+
+    back.createSync();
+    final backData = WhiteboardData(size, []);
+    back.writeAsStringSync(backData.svg.toXmlString(pretty: true));
+    notifyListeners();
+  }
+
   renameWd(String newPath) {
     assert(!Directory(newPath).existsSync());
 
@@ -150,5 +197,4 @@ class FlashcardExplorerModel extends ChangeNotifier {
     cdUp();
     notifyListeners();
   }
-
 }

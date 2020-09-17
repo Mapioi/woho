@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import './flashcard/explorer.dart';
-import './whiteboard/model.dart';
-import './whiteboard/editor.dart';
 
 void main() {
   runApp(MyApp());
@@ -29,28 +26,5 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlashcardExplorer();
-
-    final size = MediaQuery.of(context).size;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Write Out TO Help Out"),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChangeNotifierProvider(
-                create: (context) => WhiteboardModel.empty(size),
-                child: WhiteboardEditor(),
-              ),
-              fullscreenDialog: true,
-            ),
-          );
-        },
-        child: Icon(Icons.edit),
-      ),
-    );
   }
 }
