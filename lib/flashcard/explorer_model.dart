@@ -155,7 +155,6 @@ class FlashcardExplorerModel extends ChangeNotifier {
     front.createSync();
     final frontData = WhiteboardData(size, [], title: name);
     front.writeAsStringSync(frontData.svg.toXmlString(pretty: true));
-    print(frontData.svg.toXmlString(pretty: true));
 
     back.createSync();
     final backData = WhiteboardData(size, []);

@@ -9,7 +9,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Write Out to Help Out',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         // This makes the visual density adapt to the platform that you run

@@ -175,15 +175,17 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  void _onRenameFolder(BuildContext context) {
+  void _onRename(BuildContext context, bool isFc) {
+    final entityName = isFc ? "flashcard" : "folder";
+    final iconData = isFc ? Icons.copy : Icons.folder;
     showDialog(
       context: context,
       builder: (context) {
         return DirectoryNameDialogue(
           root: model.parentDir,
           title: Chip(
-            label: Text("Rename folder"),
-            avatar: Icon(Icons.folder),
+            label: Text("Rename $entityName"),
+            avatar: Icon(iconData),
           ),
           hintText: relativeName(model.parentDir, model.wd),
           onDone: (Directory newDir) {
@@ -194,11 +196,12 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  void _onDeleteFolder(BuildContext context) {
+  void _onDelete(BuildContext context, bool isFc) {
+    final entityName = isFc ? "flashcard" : "folder";
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("This folder will be deleted forever."),
+        title: Text("This $entityName will be deleted forever."),
         actions: [
           FlatButton(
             child: Text(
@@ -244,41 +247,44 @@ class _FlashcardExplorerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isFc = isFlashcard(model.wd);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           // Undoes cd, going back to previous directory
           onPressed: model.canCdUp() ? model.cdUp : null,
+          tooltip: "Go back",
         ),
         title: Text(
           model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
         ),
         centerTitle: true,
         actions: [
-          if (!isFlashcard(model.wd))
+          if (!isFc)
             IconButton(
               tooltip: "New flashcard",
               icon: Icon(Icons.copy),
               onPressed: () => _onCreateFlashcard(context),
             ),
-          if (!isFlashcard(model.wd))
+          if (!isFc)
             IconButton(
               tooltip: "New folder",
               icon: Icon(Icons.create_new_folder),
               onPressed: () => _onCreateFolder(context),
             ),
-          if (model.canCdUp() && !isFlashcard(model.wd))
+          if (model.canCdUp())
             IconButton(
-              tooltip: "Rename folder",
+              tooltip: "Rename " + (isFc ? "flashcard" : "folder"),
               icon: Icon(Icons.drive_file_rename_outline),
-              onPressed: () => _onRenameFolder(context),
+              onPressed: () => _onRename(context, isFc),
             ),
-          if (model.canCdUp() && !isFlashcard(model.wd))
+          if (model.canCdUp())
             IconButton(
-              tooltip: "Delete folder",
+              tooltip: "Delete " + (isFc ? "flashcard" : "folder"),
               icon: Icon(Icons.delete),
-              onPressed: () => _onDeleteFolder(context),
+              onPressed: () => _onDelete(context, isFc),
             ),
         ],
       ),
