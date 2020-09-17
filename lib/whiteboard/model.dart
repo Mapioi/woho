@@ -28,7 +28,10 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   final WhiteboardData _data;
   final CallbackTakingString _onSave;
   Stroke _currentStroke;
+  Offset _eraserCursorPosition;
   Tool _tool = Tool.pen;
+
+  Offset get eraserCursorPosition => _eraserCursorPosition;
 
   UnmodifiableWhiteboardDataView get data =>
       UnmodifiableWhiteboardDataView(_data);
@@ -89,21 +92,21 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
 
   Color get color => _colors[_tool];
 
-  set color(newColor) {
+  set color(Color newColor) {
     _colors[_tool] = newColor;
     notifyListeners();
   }
 
   double get strokeWidth => _strokeWidths[_tool];
 
-  set strokeWidth(newStrokeWidth) {
+  set strokeWidth(double newStrokeWidth) {
     _strokeWidths[_tool] = newStrokeWidth;
     notifyListeners();
   }
 
   Tool get tool => _tool;
 
-  set tool(newTool) {
+  set tool(Tool newTool) {
     _tool = newTool;
     notifyListeners();
   }
@@ -112,6 +115,12 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
     // Only accept stylus input to achieve palm rejection
     if (event.kind == PointerDeviceKind.stylus) {
       if (_tool == Tool.pen || _tool == Tool.eraser) {
+        // Show the cursor of the eraser as a visual aid.
+        if (_tool == Tool.eraser) {
+          _eraserCursorPosition = event.localPosition;
+          notifyListeners();
+        }
+
         _currentStroke = Stroke(
           color: color,
           isErasing: _tool == Tool.eraser,
@@ -143,6 +152,11 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   void onPointerMove(PointerMoveEvent event) {
     if (event.kind == PointerDeviceKind.stylus) {
       if (_tool == Tool.pen || _tool == Tool.eraser) {
+        if (_tool == Tool.eraser) {
+          _eraserCursorPosition = event.localPosition;
+          notifyListeners();
+        }
+
         _currentStroke.offsets.add(event.localPosition);
         notifyListeners();
       }
@@ -151,6 +165,11 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
 
   void onPointerUp(PointerUpEvent event) {
     if (event.kind == PointerDeviceKind.stylus) {
+      if (_tool == Tool.eraser) {
+        _eraserCursorPosition = null;
+        notifyListeners();
+      }
+
       if (_tool == Tool.pen || _tool == Tool.eraser) {
         _currentStroke = null;
       }

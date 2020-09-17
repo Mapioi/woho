@@ -5,8 +5,14 @@ import './data.dart';
 
 class WhiteboardPainter extends CustomPainter {
   final UnmodifiableWhiteboardDataView _data;
+  final Offset eraserCircleCenter;
+  final double eraserCircleRadius;
 
-  WhiteboardPainter(this._data);
+  WhiteboardPainter(
+    this._data, {
+    this.eraserCircleCenter,
+    this.eraserCircleRadius,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -57,6 +63,18 @@ class WhiteboardPainter extends CustomPainter {
         paint.color = stroke.color;
       }
       canvas.drawPath(path, paint);
+    }
+
+    // Shows the current erasing cursor
+    if (eraserCircleCenter != null && eraserCircleRadius != null) {
+      final eraserCirclePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke;
+      canvas.drawCircle(
+        eraserCircleCenter,
+        eraserCircleRadius,
+        eraserCirclePaint,
+      );
     }
 
     canvas.restore();
