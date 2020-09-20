@@ -94,11 +94,11 @@ class _FlashcardExplorerView extends StatelessWidget {
 
   Widget _buildFlashcard(BuildContext context) {
     Widget _buildFlashcardTile(
-        BuildContext context,
-        IconData iconData,
-        String fileName,
-        onTap,
-        ) {
+      BuildContext context,
+      IconData iconData,
+      String fileName,
+      onTap,
+    ) {
       return GestureDetector(
         child: Padding(
           padding: const EdgeInsets.all(10.0),
@@ -290,6 +290,12 @@ class _FlashcardExplorerView extends StatelessWidget {
         ],
       ),
       body: isFlashcard(model.wd) ? _buildFlashcard(context) : _buildFolder(),
+      floatingActionButton: isFc
+          ? null
+          : FloatingActionButton(
+              child: Icon(Icons.style),
+              onPressed: null,
+            ),
     );
   }
 }

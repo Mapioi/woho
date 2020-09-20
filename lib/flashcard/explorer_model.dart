@@ -73,6 +73,22 @@ String relativeName(Directory root, FileSystemEntity f) {
   }
 }
 
+List<Directory> listFlashcards(Directory root) {
+  assert(!isFlashcard(root));
+
+  final flashcards = [];
+  for (final f in config(root).orderedContents) {
+    final dir = Directory(root.path + '/$f');
+    if (isFlashcard(dir)) {
+      flashcards.add(dir);
+    } else {
+      flashcards.addAll(listFlashcards(dir));
+    }
+  }
+
+  return flashcards;
+}
+
 class FlashcardExplorerModel extends ChangeNotifier {
   final Directory root;
 
