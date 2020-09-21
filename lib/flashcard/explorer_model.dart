@@ -18,7 +18,11 @@ WhiteboardData svgData(File svgFile, Size canvasSize) {
   assert(svgFile.existsSync());
   final xml = XmlDocument.parse(svgFile.readAsStringSync());
   final data = WhiteboardData.fromSvg(xml);
-  return data.fit(canvasSize);
+  if (canvasSize == null) {
+    return data;
+  } else {
+    return data.fit(canvasSize);
+  }
 }
 
 WhiteboardModel svgModel(File svgFile, Size canvasSize) {

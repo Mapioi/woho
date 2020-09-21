@@ -22,7 +22,6 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     super.initState();
     _controller = PageController(
       keepPage: true,
-      viewportFraction: 0.9,
     );
     _isRevealed = Map.fromIterable(
       List.generate(widget.flashcards.length, (index) => index),
@@ -79,36 +78,39 @@ class Flashcard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      final cardSize = Size(
-        constraints.maxWidth * 0.54,
-        constraints.maxHeight * 0.49,
-      );
-      print(cardSize);
+      // Keep aspect ratio so that the title text is correctly positioned.
+      final front = svgData(frontSvg(flashcard), null);
+      final back = svgData(backSvg(flashcard), null);
 
-      final front = svgData(frontSvg(flashcard), cardSize);
-      final back = svgData(backSvg(flashcard), cardSize);
-
+      // Both cards have a 4.0px margin, top and bottom.
+      final availableHeight = constraints.maxHeight - 4 * 4.0;
+      final cardHeight = availableHeight / 2;
+      final frontWidth = front.size.width * (cardHeight / front.size.height);
+      final backWidth = back.size.width * (cardHeight / back.size.height);
+      final frontSize = Size(frontWidth, cardHeight);
+      final backSize = Size(backWidth, cardHeight);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           InteractiveViewer(
             child: Card(
               child: CustomPaint(
-                size: cardSize,
-                painter: WhiteboardPainter.fromMutable(front),
+                size: frontSize,
+                painter: WhiteboardPainter.fromMutable(front.fit(frontSize)),
               ),
             ),
           ),
           InteractiveViewer(
-            child: GestureDetector(
+            child: InkWell(
               child: Card(
                 child: isBottomRevealed
                     ? CustomPaint(
-                        size: cardSize,
-                        painter: WhiteboardPainter.fromMutable(back),
+                        size: backSize,
+                        painter:
+                            WhiteboardPainter.fromMutable(back.fit(backSize)),
                       )
                     : SizedBox.fromSize(
-                        size: cardSize,
+                        size: backSize,
                       ),
               ),
               onTap: onTapBottom,

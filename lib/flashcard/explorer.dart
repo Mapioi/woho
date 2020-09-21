@@ -56,7 +56,7 @@ class _FlashcardExplorerView extends StatelessWidget {
         color = Color(config(dir).colourValue);
       }
 
-      return GestureDetector(
+      return InkWell(
         child: Column(
           children: [
             Icon(
@@ -100,7 +100,7 @@ class _FlashcardExplorerView extends StatelessWidget {
       String fileName,
       onTap,
     ) {
-      return GestureDetector(
+      return InkWell(
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
