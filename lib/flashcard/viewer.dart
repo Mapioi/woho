@@ -16,6 +16,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
   PageController _controller;
   int _page = 0;
   Map<int, bool> _isRevealed;
+  bool _isRedRevealed = true;
 
   @override
   void initState() {
@@ -41,6 +42,17 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     return Scaffold(
       appBar: AppBar(
         title: Text("${_page + 1} / ${widget.flashcards.length}"),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isRedRevealed ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: () => setState(() {
+              _isRedRevealed = !_isRedRevealed;
+            }),
+            tooltip: "Hide/show red strokes",
+          ),
+        ],
       ),
       body: PageView(
         controller: _controller,
@@ -50,6 +62,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
           return Flashcard(
             flashcard: f,
             isBottomRevealed: _isRevealed[i],
+            isRedRevealed: _isRedRevealed,
             onTapBottom: () => setState(() {
               _isRevealed[i] = !_isRevealed[i];
             }),
@@ -66,12 +79,14 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
 class Flashcard extends StatelessWidget {
   final Directory flashcard;
   final bool isBottomRevealed;
+  final bool isRedRevealed;
   final onTapBottom;
 
   const Flashcard({
     Key key,
     @required this.flashcard,
     @required this.isBottomRevealed,
+    @required this.isRedRevealed,
     @required this.onTapBottom,
   }) : super(key: key);
 
@@ -100,7 +115,10 @@ class Flashcard extends StatelessWidget {
               child: Card(
                 child: CustomPaint(
                   size: frontSize,
-                  painter: WhiteboardPainter.fromMutable(front.fit(frontSize)),
+                  painter: WhiteboardPainter.fromMutable(
+                    front.fit(frontSize),
+                    isRedRevealed: isRedRevealed,
+                  ),
                 ),
               ),
             ),
@@ -113,8 +131,10 @@ class Flashcard extends StatelessWidget {
                   child: isBottomRevealed
                       ? CustomPaint(
                           size: backSize,
-                          painter:
-                              WhiteboardPainter.fromMutable(back.fit(backSize)),
+                          painter: WhiteboardPainter.fromMutable(
+                            back.fit(backSize),
+                            isRedRevealed: isRedRevealed,
+                          ),
                         )
                       : SizedBox.fromSize(
                           size: backSize,

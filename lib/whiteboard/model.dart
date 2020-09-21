@@ -37,16 +37,15 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
       UnmodifiableWhiteboardDataView(_data);
 
   static final defaultColors = UnmodifiableMapView({
-    Tool.pen: Colors.blueAccent,
+    Tool.pen: Colors.blue,
     Tool.eraser: null,
   });
 
   static final colorChoices = UnmodifiableMapView({
     Tool.pen: UnmodifiableListView([
       Colors.red,
-      Colors.blueAccent,
+      Colors.blue,
       Colors.black,
-      Colors.grey,
     ]),
     Tool.eraser: UnmodifiableListView(<Color>[]),
   });

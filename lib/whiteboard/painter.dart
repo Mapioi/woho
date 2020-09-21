@@ -7,17 +7,20 @@ class WhiteboardPainter extends CustomPainter {
   final UnmodifiableWhiteboardDataView _data;
   final Offset eraserCircleCenter;
   final double eraserCircleRadius;
+  final bool isRedRevealed;
 
   WhiteboardPainter(
     this._data, {
     this.eraserCircleCenter,
     this.eraserCircleRadius,
+    this.isRedRevealed,
   });
 
   WhiteboardPainter.fromMutable(
     WhiteboardData data, {
     this.eraserCircleCenter,
     this.eraserCircleRadius,
+    this.isRedRevealed,
   }) : _data = UnmodifiableWhiteboardDataView(data);
 
   @override
@@ -68,7 +71,11 @@ class WhiteboardPainter extends CustomPainter {
       } else {
         paint.color = stroke.color;
       }
-      canvas.drawPath(path, paint);
+      // Hide red strokes.
+      if (isRedRevealed == false && stroke.color.value == Colors.red.value)
+        continue;
+      else
+        canvas.drawPath(path, paint);
     }
 
     // Shows the current erasing cursor
