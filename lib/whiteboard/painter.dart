@@ -14,6 +14,12 @@ class WhiteboardPainter extends CustomPainter {
     this.eraserCircleRadius,
   });
 
+  WhiteboardPainter.fromMutable(
+    WhiteboardData data, {
+    this.eraserCircleCenter,
+    this.eraserCircleRadius,
+  }) : _data = UnmodifiableWhiteboardDataView(data);
+
   @override
   void paint(Canvas canvas, Size size) {
     if (_data.title != null) {
@@ -26,7 +32,7 @@ class WhiteboardPainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
-        textScaleFactor: 5,
+        textScaleFactor: 5 * size.height / 1024,
       );
       tp.layout();
       tp.paint(

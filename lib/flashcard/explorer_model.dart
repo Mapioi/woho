@@ -14,12 +14,16 @@ File backSvg(Directory dir) {
   return File(dir.path + '/back.svg');
 }
 
-WhiteboardModel svgModel(File svgFile, Size canvasSize) {
+WhiteboardData svgData(File svgFile, Size canvasSize) {
   assert(svgFile.existsSync());
   final xml = XmlDocument.parse(svgFile.readAsStringSync());
   final data = WhiteboardData.fromSvg(xml);
+  return data.fit(canvasSize);
+}
+
+WhiteboardModel svgModel(File svgFile, Size canvasSize) {
   final model = WhiteboardModel(
-    data.fit(canvasSize),
+    svgData(svgFile, canvasSize),
     (xmlString) {
       svgFile.writeAsStringSync(xmlString);
     },
@@ -76,7 +80,7 @@ String relativeName(Directory root, FileSystemEntity f) {
 List<Directory> listFlashcards(Directory root) {
   assert(!isFlashcard(root));
 
-  final flashcards = [];
+  final flashcards = <Directory>[];
   for (final f in config(root).orderedContents) {
     final dir = Directory(root.path + '/$f');
     if (isFlashcard(dir)) {

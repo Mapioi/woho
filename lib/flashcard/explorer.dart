@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:reorderables/reorderables.dart';
 import './explorer_model.dart';
 import './popups.dart';
+import './viewer.dart';
 import '../whiteboard/editor.dart';
 
 class FlashcardExplorer extends StatefulWidget {
@@ -224,13 +225,18 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onEditFlashcard(BuildContext context, File svg) {
-    final size = MediaQuery.of(context).size;
+    final parentSize = MediaQuery.of(context).size;
+    final editorSize = Size(
+      parentSize.width,
+      // Deduct the status bar height and tool bar height from total height.
+      parentSize.height - MediaQuery.of(context).padding.top - kToolbarHeight,
+    );
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider(
-          create: (context) => svgModel(svg, size),
+          create: (context) => svgModel(svg, editorSize),
           child: WhiteboardEditor(),
         ),
         fullscreenDialog: true,
@@ -294,7 +300,17 @@ class _FlashcardExplorerView extends StatelessWidget {
           ? null
           : FloatingActionButton(
               child: Icon(Icons.style),
-              onPressed: null,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return FlashcardViewer(
+                      flashcards: listFlashcards(model.wd),
+                    );
+                  },
+                  fullscreenDialog: true,
+                ),
+              ),
             ),
     );
   }
