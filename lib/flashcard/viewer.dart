@@ -138,6 +138,9 @@ class Flashcard extends StatelessWidget {
                         )
                       : SizedBox.fromSize(
                           size: backSize,
+                          child: Center(
+                            child: Text("Tap to reveal"),
+                          ),
                         ),
                 ),
                 onTap: onTapBottom,
