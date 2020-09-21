@@ -92,28 +92,36 @@ class Flashcard extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          InteractiveViewer(
-            child: Card(
-              child: CustomPaint(
-                size: frontSize,
-                painter: WhiteboardPainter.fromMutable(front.fit(frontSize)),
+          // Limit the viewport to the card to prevent PageView scrolling.
+          ClipRect(
+            child: InteractiveViewer(
+              // Disables dragging around since PageView interferes with it.
+              panEnabled: false,
+              child: Card(
+                child: CustomPaint(
+                  size: frontSize,
+                  painter: WhiteboardPainter.fromMutable(front.fit(frontSize)),
+                ),
               ),
             ),
           ),
-          InteractiveViewer(
-            child: InkWell(
-              child: Card(
-                child: isBottomRevealed
-                    ? CustomPaint(
-                        size: backSize,
-                        painter:
-                            WhiteboardPainter.fromMutable(back.fit(backSize)),
-                      )
-                    : SizedBox.fromSize(
-                        size: backSize,
-                      ),
+          ClipRect(
+            child: InteractiveViewer(
+              panEnabled: false,
+              child: InkWell(
+                child: Card(
+                  child: isBottomRevealed
+                      ? CustomPaint(
+                          size: backSize,
+                          painter:
+                              WhiteboardPainter.fromMutable(back.fit(backSize)),
+                        )
+                      : SizedBox.fromSize(
+                          size: backSize,
+                        ),
+                ),
+                onTap: onTapBottom,
               ),
-              onTap: onTapBottom,
             ),
           ),
         ],
