@@ -17,17 +17,18 @@ WhiteboardData svgData(File svgFile, Size canvasSize) {
   }
 }
 
-WhiteboardModel svgModel(File svgFile, Size canvasSize) {
+WhiteboardModel svgModel(File svgFile, Size canvasSize, {VoidCallback onDone}) {
   final model = WhiteboardModel(
     svgData(svgFile, canvasSize),
-        (xmlString) {
+    (xmlString) {
       svgFile.writeAsStringSync(xmlString);
+      onDone();
     },
   );
   return model;
 }
 
-void launchEditor(BuildContext context, File svg) {
+void launchEditor(BuildContext context, File svg, {VoidCallback onDone}) {
   final parentSize = MediaQuery.of(context).size;
   final editorSize = Size(
     parentSize.width,
@@ -39,7 +40,7 @@ void launchEditor(BuildContext context, File svg) {
     context,
     MaterialPageRoute(
       builder: (context) => ChangeNotifierProvider(
-        create: (context) => svgModel(svg, editorSize),
+        create: (context) => svgModel(svg, editorSize, onDone: onDone),
         child: WhiteboardEditor(),
       ),
       fullscreenDialog: true,

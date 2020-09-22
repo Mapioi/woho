@@ -196,6 +196,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
               onPressed: () => launchEditor(
                 context,
                 frontSvg(_flashcards[_page]),
+                onDone: () => setState(() {}),
               ),
             ),
           if (_flashcards.isNotEmpty)
@@ -205,6 +206,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
               onPressed: () => launchEditor(
                 context,
                 backSvg(_flashcards[_page]),
+                onDone: () => setState(() {}),
               ),
             ),
           if (_flashcards.isNotEmpty)
