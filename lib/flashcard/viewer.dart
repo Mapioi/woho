@@ -190,10 +190,30 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
         actions: [
           if (_flashcards.isNotEmpty)
             IconButton(
+              tooltip: "Edit front",
+              icon: Icon(Icons.flip_to_front),
+              onPressed: () => launchEditor(
+                context,
+                frontSvg(_flashcards[_page]),
+              ),
+            ),
+          if (_flashcards.isNotEmpty)
+            IconButton(
+              tooltip: "Edit back",
+              icon: Icon(Icons.flip_to_back),
+              onPressed: () => launchEditor(
+                context,
+                backSvg(_flashcards[_page]),
+              ),
+            ),
+          if (_flashcards.isNotEmpty)
+            IconButton(
+              tooltip: "Shuffle",
               icon: Icon(Icons.shuffle),
               onPressed: shuffle,
             ),
           IconButton(
+            tooltip: "Bookmarked",
             icon: Icon(
               _isFilteringMarked ? Icons.bookmarks : Icons.bookmarks_outlined,
             ),
@@ -204,16 +224,17 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
               items: buildFilterMarkedOptions(),
               value: _maxDaysSinceMarked,
               onChanged: filterMarked,
+              iconEnabledColor: Theme.of(context).buttonColor,
               dropdownColor: Theme.of(context).accentColor,
             ),
           IconButton(
+            tooltip: "Hide/show red strokes",
             icon: Icon(
               _isRedRevealed ? Icons.visibility : Icons.visibility_off,
             ),
             onPressed: () => setState(() {
               _isRedRevealed = !_isRedRevealed;
             }),
-            tooltip: "Hide/show red strokes",
           ),
         ],
       ),
