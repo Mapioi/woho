@@ -170,6 +170,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
         }),
       );
       fab = FloatingActionButton(
+        tooltip: "Bookmark",
         child: Icon(isPageMarked ? Icons.favorite : Icons.favorite_border),
         onPressed: () {
           setState(() {

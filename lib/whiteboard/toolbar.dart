@@ -80,6 +80,7 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
 
   Widget makeToolButton(Tool tool) {
     return IconButton(
+      tooltip: tool.toString().split('.')[1],
       icon: Icon(WhiteboardModel.toolIcons[tool]),
       onPressed: model.tool == tool
           ? null
@@ -92,16 +93,19 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
   }
 
   final saveButton = IconButton(
+    tooltip: "Save changes",
     icon: Icon(Icons.save),
     onPressed: model.isSaved() ? null : model.save,
   );
 
   final undoButton = IconButton(
+    tooltip: "Undo change",
     icon: Icon(Icons.undo),
     onPressed: model.canUndo() ? model.undo : null,
   );
 
   final redoButton = IconButton(
+    tooltip: "Redo change",
     icon: Icon(Icons.redo),
     onPressed: model.canRedo() ? model.redo : null,
   );

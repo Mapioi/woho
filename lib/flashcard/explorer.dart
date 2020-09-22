@@ -239,10 +239,10 @@ class _FlashcardExplorerView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: "Go back",
           icon: Icon(Icons.arrow_back_ios),
           // Undoes cd, going back to previous directory
           onPressed: model.canCdUp() ? model.cdUp : null,
-          tooltip: "Go back",
         ),
         title: Text(
           model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
@@ -279,6 +279,7 @@ class _FlashcardExplorerView extends StatelessWidget {
       floatingActionButton: isFc
           ? null
           : FloatingActionButton(
+              tooltip: "Browse flashcards",
               child: Icon(Icons.style),
               onPressed: () => Navigator.push(
                 context,
