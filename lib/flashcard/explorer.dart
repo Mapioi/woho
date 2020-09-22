@@ -241,6 +241,13 @@ class _FlashcardExplorerView extends StatelessWidget {
     launchEditor(context, backSvg(model.wd));
   }
 
+  void _onEditFolderColour(BuildContext context) {
+    showDialog(context: context, builder: (context) => ColourPickerDialogue(
+      initialColour: Color(config(model.wd).colourValue),
+      onDone: model.setWdColour,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isFc = isFlashcard(model.wd);
@@ -269,6 +276,12 @@ class _FlashcardExplorerView extends StatelessWidget {
               tooltip: "New folder",
               icon: Icon(Icons.create_new_folder),
               onPressed: () => _onCreateFolder(context),
+            ),
+          if (model.canCdUp() && !isFc)
+            IconButton(
+              tooltip: "Change folder colour",
+              icon: Icon(Icons.palette),
+              onPressed: () => _onEditFolderColour(context),
             ),
           if (model.canCdUp())
             IconButton(

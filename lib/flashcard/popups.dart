@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-typedef DirectoryCallback = Function(Directory);
+typedef DirectoryCallback = void Function(Directory);
+typedef ColorCallback = void Function(Color);
 
 class DirectoryNameDialogue extends StatefulWidget {
   final Directory root;
@@ -84,6 +85,81 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
             widget.onDone(_directory);
           }
         },
+      ),
+    );
+  }
+}
+
+class ColourPickerDialogue extends StatelessWidget {
+  final Color initialColour;
+  final ColorCallback onDone;
+
+  const ColourPickerDialogue({
+    Key key,
+    this.initialColour,
+    this.onDone,
+  }) : super(key: key);
+
+  Widget buildCell(BuildContext context, Color color) {
+    return InkWell(
+      child: Padding(
+        padding: const EdgeInsets.all(1.0),
+        child: Container(
+          width: 25,
+          height: 25,
+          color: color,
+        ),
+      ),
+      onTap: () {
+        onDone(color);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget buildRow(BuildContext context, ColorSwatch swatch) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        swatch[50],
+        swatch[100],
+        swatch[200],
+        swatch[300],
+        swatch[400],
+        swatch,
+        swatch[600],
+        swatch[700],
+        swatch[800],
+        swatch[900],
+      ].map((c) => buildCell(context, c)).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Colors.pink,
+          Colors.red,
+          Colors.deepOrange,
+          Colors.orange,
+          Colors.amber,
+          Colors.yellow,
+          Colors.lime,
+          Colors.lightGreen,
+          Colors.green,
+          Colors.teal,
+          Colors.cyan,
+          Colors.lightBlue,
+          Colors.blue,
+          Colors.indigo,
+          Colors.purple,
+          Colors.blueGrey,
+          Colors.brown,
+          Colors.grey,
+        ].map((c) => buildRow(context, c)).toList(),
       ),
     );
   }

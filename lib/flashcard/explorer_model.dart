@@ -230,4 +230,12 @@ class FlashcardExplorerModel extends ChangeNotifier {
     configFile(_wd).writeAsStringSync(newJsonStr);
     notifyListeners();
   }
+
+  setWdColour(Color newColor) {
+    final wdConfig = config(_wd);
+    wdConfig.colourValue = newColor.value;
+    final newJsonStr = jsonEncode(wdConfig.toJson());
+    configFile(_wd).writeAsStringSync(newJsonStr);
+    notifyListeners();
+  }
 }

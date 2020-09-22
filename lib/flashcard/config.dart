@@ -14,7 +14,7 @@ class Config {
   List<String> orderedContents;
 
   Config.empty()
-      : colourValue = Colors.lightBlueAccent[100].value,
+      : colourValue = Colors.lightBlue[200].value,
         orderedContents = [];
 
   factory Config.fromJson(Map<String, dynamic> json) => _$ConfigFromJson(json);
