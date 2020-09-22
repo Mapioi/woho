@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:xml/xml.dart';
 import './config.dart';
 import './log.dart';
 import '../whiteboard/data.dart';
-import '../whiteboard/model.dart';
 
 File frontSvg(Directory dir) {
   return File(dir.path + '/front.svg');
@@ -13,27 +11,6 @@ File frontSvg(Directory dir) {
 
 File backSvg(Directory dir) {
   return File(dir.path + '/back.svg');
-}
-
-WhiteboardData svgData(File svgFile, Size canvasSize) {
-  assert(svgFile.existsSync());
-  final xml = XmlDocument.parse(svgFile.readAsStringSync());
-  final data = WhiteboardData.fromSvg(xml);
-  if (canvasSize == null) {
-    return data;
-  } else {
-    return data.fit(canvasSize);
-  }
-}
-
-WhiteboardModel svgModel(File svgFile, Size canvasSize) {
-  final model = WhiteboardModel(
-    svgData(svgFile, canvasSize),
-    (xmlString) {
-      svgFile.writeAsStringSync(xmlString);
-    },
-  );
-  return model;
 }
 
 File configFile(Directory dir) {

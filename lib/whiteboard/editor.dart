@@ -5,16 +5,6 @@ import './painter.dart';
 import './toolbar.dart';
 
 /// A whiteboard widget that supports editing.
-///
-/// ```dart
-/// MaterialPageRoute(
-///   builder: (context) => ChangeNotifierProvider(
-///     create: (context) => WhiteboardModel(data),
-///     child: WhiteboardEditor(),
-///   ),
-///   fullscreenDialog: true,
-/// )
-/// ```
 class WhiteboardEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

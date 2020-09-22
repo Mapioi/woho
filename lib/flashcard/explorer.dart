@@ -6,7 +6,7 @@ import 'package:reorderables/reorderables.dart';
 import './explorer_model.dart';
 import './popups.dart';
 import './viewer.dart';
-import '../whiteboard/editor.dart';
+import '../whiteboard/whiteboard.dart';
 
 class FlashcardExplorer extends StatefulWidget {
   @override
@@ -224,32 +224,12 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  void _onEditFlashcard(BuildContext context, File svg) {
-    final parentSize = MediaQuery.of(context).size;
-    final editorSize = Size(
-      parentSize.width,
-      // Deduct the status bar height and tool bar height from total height.
-      parentSize.height - MediaQuery.of(context).padding.top - kToolbarHeight,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChangeNotifierProvider(
-          create: (context) => svgModel(svg, editorSize),
-          child: WhiteboardEditor(),
-        ),
-        fullscreenDialog: true,
-      ),
-    );
-  }
-
   void _onOpenFront(BuildContext context) {
-    _onEditFlashcard(context, frontSvg(model.wd));
+    launchEditor(context, frontSvg(model.wd));
   }
 
   void _onOpenBack(BuildContext context) {
-    _onEditFlashcard(context, backSvg(model.wd));
+    launchEditor(context, backSvg(model.wd));
   }
 
   @override

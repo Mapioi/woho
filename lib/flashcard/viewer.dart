@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import './explorer_model.dart';
 import '../whiteboard/painter.dart';
+import '../whiteboard/whiteboard.dart';
 
 class FlashcardViewer extends StatefulWidget {
   final List<Directory> flashcards;
