@@ -48,8 +48,11 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     if (_isFilteringMarked) {
       // Remove filter.
       setState(() {
-        _page = 0;
-        _controller.jumpToPage(_page);
+        if (_controller.hasClients)
+          _controller.jumpToPage(0);
+        else
+          _page = 0;
+
         _flashcards = widget.flashcards;
         _isRevealed = constantMapRange(_flashcards.length, false);
         _isFilteringMarked = false;
@@ -64,8 +67,11 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
   void filterMarked(int maxDaysSinceMarked) {
     assert(_isFilteringMarked);
     setState(() {
-      _page = 0;
-      _controller.jumpToPage(_page);
+      if (_controller.hasClients)
+        _controller.jumpToPage(0);
+      else
+        _page = 0;
+
       _flashcards = widget.flashcards.where(
         (f) {
           final fLog = log(f);
@@ -112,25 +118,25 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     return [...options, foreverOption];
   }
 
+  void shuffle() {
+    setState(() {
+      // The animation also triggers onChange and sets _page to 0.
+      _controller.animateToPage(
+        0,
+        duration: Duration(seconds: 1),
+        curve: Curves.easeInOut,
+      );
+      _flashcards.shuffle();
+      _isRevealed = constantMapRange(_flashcards.length, false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pages = _flashcards.asMap().entries.map((entry) {
-      final i = entry.key;
-      final f = entry.value;
-      return Flashcard(
-        key: Key(entry.toString()),
-        flashcard: f,
-        isBottomRevealed: _isRevealed[i],
-        isRedRevealed: _isRedRevealed,
-        onTapBottom: () => setState(() {
-          _isRevealed[i] = !_isRevealed[i];
-        }),
-      );
-    }).toList();
     FloatingActionButton fab;
     Widget body;
 
-    if (pages.isEmpty) {
+    if (_flashcards.isEmpty) {
       body = Center(
         child: Chip(
           avatar: Icon(Icons.self_improvement),
@@ -142,6 +148,19 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
       final pageLog = log(_flashcards[_page]);
       final isPageMarked = pageLog.dates.isNotEmpty &&
           pageLog.daysSinceLastMarked() <= _maxDaysSinceMarked;
+      final pages = _flashcards.asMap().entries.map((entry) {
+        final i = entry.key;
+        final f = entry.value;
+        return Flashcard(
+          key: Key(entry.toString()),
+          flashcard: f,
+          isBottomRevealed: _isRevealed[i],
+          isRedRevealed: _isRedRevealed,
+          onTapBottom: () => setState(() {
+            _isRevealed[i] = !_isRevealed[i];
+          }),
+        );
+      }).toList();
       body = PageView(
         controller: _controller,
         children: pages,
@@ -168,6 +187,11 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
         title: Text("${_page + 1} / ${_flashcards.length}"),
         centerTitle: true,
         actions: [
+          if (_flashcards.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.shuffle),
+              onPressed: shuffle,
+            ),
           IconButton(
             icon: Icon(
               _isFilteringMarked ? Icons.bookmarks : Icons.bookmarks_outlined,
