@@ -76,6 +76,7 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
           hintText: widget.hintText,
           errorText: _errorText,
         ),
+        keyboardType: TextInputType.text,
         onChanged: _onInputChange,
         onEditingComplete: () {
           if (_status == DirectoryNameStatus.ok) {

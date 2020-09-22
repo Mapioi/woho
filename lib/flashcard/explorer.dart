@@ -50,7 +50,16 @@ class _FlashcardExplorerView extends StatelessWidget {
 
       if (isFlashcard(dir)) {
         iconData = Icons.copy;
-        color = null;
+        final fLog = log(dir);
+        if (fLog.dates.isEmpty) {
+          color = Colors.black;
+        } else {
+          color = Color.lerp(
+            Colors.red,
+            Colors.black,
+            1 - 1 / (fLog.daysSinceLastMarked() / 30 + 1),
+          );
+        }
       } else {
         iconData = Icons.folder;
         color = Color(config(dir).colourValue);
