@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 import './config.dart';
+import './log.dart';
 import '../whiteboard/data.dart';
 import '../whiteboard/model.dart';
 
@@ -54,20 +55,14 @@ Config config(Directory dir) {
 
 bool isFlashcard(Directory dir) {
   final config = configFile(dir);
-  final nbFiles = dir.listSync().where((e) => e is File).length;
   if (config.existsSync()) {
-    assert(nbFiles == 1); // only config.json
     return false;
   } else {
-    // TODO relax to allow for file signifying the flashcard is starred
-    assert(nbFiles == 2); // front.svg and back.svg
+    assert(frontSvg(dir).existsSync());
+    assert(backSvg(dir).existsSync());
+    assert(logFile(dir).existsSync());
     return true;
   }
-}
-
-String extension(File file) {
-  assert(file.path.split('.').length >= 2);
-  return file.path.split('.').last;
 }
 
 String relativeName(Directory root, FileSystemEntity f) {
@@ -96,6 +91,29 @@ List<Directory> listFlashcards(Directory root) {
 
   return flashcards;
 }
+
+File logFile(Directory flashcard) {
+  return File(flashcard.path + '/log.txt');
+}
+
+FlashcardLog log(Directory flashcard) {
+  assert(logFile(flashcard).existsSync());
+  final lines = logFile(flashcard).readAsLinesSync();
+  return FlashcardLog.fromLines(lines);
+}
+
+void markFlashcard(Directory flashcard) {
+  final fLog = log(flashcard);
+  fLog.mark();
+  logFile(flashcard).writeAsStringSync(fLog.toString());
+}
+
+void unmarkFlashcard(Directory flashcard) {
+  final fLog = log(flashcard);
+  fLog.unMark();
+  logFile(flashcard).writeAsStringSync(fLog.toString());
+}
+
 
 class FlashcardExplorerModel extends ChangeNotifier {
   final Directory root;
@@ -184,6 +202,11 @@ class FlashcardExplorerModel extends ChangeNotifier {
     back.createSync();
     final backData = WhiteboardData(size, []);
     back.writeAsStringSync(backData.svg.toXmlString(pretty: true));
+
+    final log = logFile(dir);
+    assert(!log.existsSync());
+    log.createSync();
+
     notifyListeners();
   }
 
