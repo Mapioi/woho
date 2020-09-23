@@ -90,6 +90,42 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
   }
 }
 
+class DeleteAlertDialogue extends StatelessWidget {
+  final String titleText;
+  final String deleteButtonText;
+  final VoidCallback onConfirmDelete;
+
+  const DeleteAlertDialogue({
+    Key key,
+    @required this.titleText,
+    @required this.deleteButtonText,
+    @required this.onConfirmDelete,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(titleText),
+      actions: [
+        FlatButton(
+          child: Text("Abort"),
+          onPressed: () => Navigator.pop(context),
+        ),
+        FlatButton(
+          child: Text(
+            deleteButtonText,
+            style: TextStyle(color: Colors.redAccent),
+          ),
+          onPressed: () {
+            onConfirmDelete();
+            Navigator.pop(context);
+          },
+        ),
+      ],
+    );
+  }
+}
+
 class ColourPickerDialogue extends StatelessWidget {
   final Color initialColour;
   final ColorCallback onDone;

@@ -49,7 +49,7 @@ class _FlashcardExplorerView extends StatelessWidget {
       Color color;
 
       if (isFlashcard(dir)) {
-        iconData = Icons.copy;
+        iconData = Icons.collections;
         final fLog = log(dir);
         if (fLog.dates.isEmpty) {
           color = Colors.black;
@@ -174,7 +174,7 @@ class _FlashcardExplorerView extends StatelessWidget {
           root: model.wd,
           title: Chip(
             label: Text("New flashcard"),
-            avatar: Icon(Icons.copy),
+            avatar: Icon(Icons.collections),
           ),
           hintText: "Untitled flashcard",
           onDone: (Directory dir) {
@@ -188,7 +188,7 @@ class _FlashcardExplorerView extends StatelessWidget {
 
   void _onRename(BuildContext context, bool isFc) {
     final entityName = isFc ? "flashcard" : "folder";
-    final iconData = isFc ? Icons.copy : Icons.folder;
+    final iconData = isFc ? Icons.collections : Icons.folder;
     showDialog(
       context: context,
       builder: (context) {
@@ -211,26 +211,36 @@ class _FlashcardExplorerView extends StatelessWidget {
     final entityName = isFc ? "flashcard" : "folder";
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("This $entityName will be deleted forever."),
-        actions: [
-          FlatButton(
-            child: Text(
-              "Delete",
-              style: TextStyle(color: Colors.redAccent),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              model.deleteWdAndCdUp();
-            },
-          ),
-          FlatButton(
-            child: Text("Abort"),
-            onPressed: () => Navigator.pop(context),
-          )
-        ],
+      builder: (context) => DeleteAlertDialogue(
+        titleText: "This $entityName will be deleted forever",
+        deleteButtonText: "Delete",
+        onConfirmDelete: model.deleteWdAndCdUp,
       ),
     );
+  }
+
+  void _onCopy(BuildContext context) {
+    model.copyWd();
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Copied flashcard!"),
+      ),
+    );
+  }
+
+  void _onPaste(BuildContext context) {
+    if (model.willPasteCreateConflict) {
+      showDialog(
+        context: context,
+        builder: (context) => DeleteAlertDialogue(
+          titleText: "'${model.clipboardName}' already exists in this folder.",
+          deleteButtonText: "Overwrite",
+          onConfirmDelete: model.pasteIntoWd,
+        ),
+      );
+    } else {
+      model.pasteIntoWd();
+    }
   }
 
   void _onOpenFront(BuildContext context) {
@@ -242,15 +252,19 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onEditFolderColour(BuildContext context) {
-    showDialog(context: context, builder: (context) => ColourPickerDialogue(
-      initialColour: Color(config(model.wd).colourValue),
-      onDone: model.setWdColour,
-    ));
+    showDialog(
+      context: context,
+      builder: (context) => ColourPickerDialogue(
+        initialColour: Color(config(model.wd).colourValue),
+        onDone: model.setWdColour,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isFc = isFlashcard(model.wd);
+    final entityName = isFc ? "flashcard" : "folder";
 
     return Scaffold(
       appBar: AppBar(
@@ -268,7 +282,7 @@ class _FlashcardExplorerView extends StatelessWidget {
           if (!isFc)
             IconButton(
               tooltip: "New flashcard",
-              icon: Icon(Icons.copy),
+              icon: Icon(Icons.collections),
               onPressed: () => _onCreateFlashcard(context),
             ),
           if (!isFc)
@@ -276,6 +290,21 @@ class _FlashcardExplorerView extends StatelessWidget {
               tooltip: "New folder",
               icon: Icon(Icons.create_new_folder),
               onPressed: () => _onCreateFolder(context),
+            ),
+          if (isFc)
+            // Use a builder to access a context 'under' the scaffold.
+            Builder(
+              builder: (context) => IconButton(
+                tooltip: "Copy flashcard",
+                icon: Icon(Icons.copy),
+                onPressed: () => _onCopy(context),
+              ),
+            ),
+          if (!isFc)
+            IconButton(
+              tooltip: "Paste flashcard",
+              icon: Icon(Icons.paste),
+              onPressed: model.canPaste ? () => _onPaste(context) : null,
             ),
           if (model.canCdUp() && !isFc)
             IconButton(
@@ -285,13 +314,13 @@ class _FlashcardExplorerView extends StatelessWidget {
             ),
           if (model.canCdUp())
             IconButton(
-              tooltip: "Rename " + (isFc ? "flashcard" : "folder"),
+              tooltip: "Rename $entityName",
               icon: Icon(Icons.drive_file_rename_outline),
               onPressed: () => _onRename(context, isFc),
             ),
           if (model.canCdUp())
             IconButton(
-              tooltip: "Delete " + (isFc ? "flashcard" : "folder"),
+              tooltip: "Delete $entityName",
               icon: Icon(Icons.delete),
               onPressed: () => _onDelete(context, isFc),
             ),

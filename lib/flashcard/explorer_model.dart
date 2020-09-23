@@ -120,6 +120,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   List<Directory> _pastDirs;
 
+  _Clipboard _clipboard;
+
   void cd(Directory dir) {
     _pastDirs.add(dir);
     _wd = dir;
@@ -191,7 +193,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     assert(!Directory(newPath).existsSync());
 
     if (isFlashcard(_wd)) {
-      final data = svgData(frontSvg(_wd), null);
+      final data = svgData(frontSvg(_wd));
       data.title = relativeName(parentDir, Directory(newPath));
       frontSvg(_wd).writeAsStringSync(data.svg.toXmlString(pretty: true));
     }
@@ -228,6 +230,54 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  copyWd() {
+    assert(isFlashcard(_wd));
+    _clipboard = _Clipboard(
+      flashcardName: _wd.path.split('/').last,
+      frontContents: frontSvg(_wd).readAsStringSync(),
+      backContents: frontSvg(_wd).readAsStringSync(),
+      logContents: logFile(_wd).readAsStringSync(),
+    );
+  }
+
+  Directory _pastedClipboardDirectory() {
+    assert(_clipboard != null);
+    final path = _wd.path + '/' + _clipboard.flashcardName;
+    return Directory(path);
+  }
+
+  bool get willPasteCreateConflict => _pastedClipboardDirectory().existsSync();
+
+  bool get canPaste => _clipboard != null;
+
+  String get clipboardName => _clipboard.flashcardName;
+
+  pasteIntoWd() {
+    assert(_clipboard != null);
+    final oldDir = _pastedClipboardDirectory();
+    if (oldDir.existsSync()) {
+      oldDir.deleteSync(recursive: true);
+    }
+
+    final newDir = _pastedClipboardDirectory();
+    assert(!newDir.existsSync());
+    newDir.createSync();
+    frontSvg(newDir).createSync();
+    frontSvg(newDir).writeAsStringSync(_clipboard.frontContents);
+    backSvg(newDir).createSync();
+    backSvg(newDir).writeAsStringSync(_clipboard.backContents);
+    logFile(newDir).createSync();
+    logFile(newDir).writeAsStringSync(_clipboard.logContents);
+
+    final wdConfig = config(_wd);
+    if (!wdConfig.orderedContents.contains(_clipboard.flashcardName)) {
+      wdConfig.orderedContents.add(_clipboard.flashcardName);
+    }
+    configFile(_wd).writeAsStringSync(jsonEncode(wdConfig.toJson()));
+
+    notifyListeners();
+  }
+
   reorderContents(int oldIndex, int newIndex) {
     final wdConfig = config(_wd);
     final movedEntity = wdConfig.orderedContents.removeAt(oldIndex);
@@ -244,4 +294,18 @@ class FlashcardExplorerModel extends ChangeNotifier {
     configFile(_wd).writeAsStringSync(newJsonStr);
     notifyListeners();
   }
+}
+
+class _Clipboard {
+  final String flashcardName;
+  final String frontContents;
+  final String backContents;
+  final String logContents;
+
+  _Clipboard({
+    @required this.flashcardName,
+    @required this.frontContents,
+    @required this.backContents,
+    @required this.logContents,
+  });
 }

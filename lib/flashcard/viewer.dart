@@ -265,8 +265,8 @@ class Flashcard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       // Keep aspect ratio so that the title text is correctly positioned.
-      final front = svgData(frontSvg(flashcard), null);
-      final back = svgData(backSvg(flashcard), null);
+      final front = svgData(frontSvg(flashcard));
+      final back = svgData(backSvg(flashcard));
 
       // Both cards have a 4.0px margin, top and bottom.
       final availableHeight = constraints.maxHeight - 4 * 4.0;
