@@ -76,9 +76,9 @@ class UnmodifiableStrokeView {
 
 /// A container for the [Size] of the whiteboard and the [Stroke]s on it.
 class WhiteboardData {
-  final Size size;
-  final List<Stroke> strokes;
-  final String title;
+  Size size;
+  List<Stroke> strokes;
+  String title;
 
   WhiteboardData(this.size, this.strokes, {this.title});
 

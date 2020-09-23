@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import './config.dart';
 import './log.dart';
 import '../whiteboard/data.dart';
+import '../whiteboard/whiteboard.dart';
 
 File frontSvg(Directory dir) {
   return File(dir.path + '/front.svg');
@@ -90,7 +91,6 @@ void unmarkFlashcard(Directory flashcard) {
   fLog.unMark();
   logFile(flashcard).writeAsStringSync(fLog.toString());
 }
-
 
 class FlashcardExplorerModel extends ChangeNotifier {
   final Directory root;
@@ -189,6 +189,12 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   renameWd(String newPath) {
     assert(!Directory(newPath).existsSync());
+
+    if (isFlashcard(_wd)) {
+      final data = svgData(frontSvg(_wd), null);
+      data.title = relativeName(parentDir, Directory(newPath));
+      frontSvg(_wd).writeAsStringSync(data.svg.toXmlString(pretty: true));
+    }
 
     final renamedWd = _wd.renameSync(newPath);
 
