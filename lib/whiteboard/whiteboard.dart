@@ -22,7 +22,7 @@ WhiteboardModel svgModel(File svgFile, Size canvasSize, {VoidCallback onDone}) {
     svgData(svgFile, canvasSize),
     (xmlString) {
       svgFile.writeAsStringSync(xmlString);
-      onDone();
+      if (onDone != null) onDone();
     },
   );
   return model;

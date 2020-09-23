@@ -282,7 +282,7 @@ class WhiteboardData {
       final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
       assert(maskUrl == "url(#eraser$maskId)");
       assert(maskId <= iEraser);
-      while (iEraser > max(1, maskId)) {
+      while (iEraser > maskId) {
         strokes.add(eraserStrokes[iEraser]);
         iEraser -= 1;
       }
