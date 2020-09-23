@@ -226,6 +226,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
     final parentConfigFile = configFile(parentDir);
     parentConfigFile.writeAsStringSync(jsonEncode(parentConfig.toJson()));
 
+    wd.deleteSync(recursive: true);
+
     cdUp();
     notifyListeners();
   }
