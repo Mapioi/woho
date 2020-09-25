@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 typedef DirectoryCallback = void Function(Directory);
@@ -136,14 +137,18 @@ class ColourPickerDialogue extends StatelessWidget {
     this.onDone,
   }) : super(key: key);
 
-  Widget buildCell(BuildContext context, Color color) {
+  Widget _buildCell(BuildContext context, Color color) {
+    final isChosen = initialColour.value == color.value;
     return InkWell(
       child: Padding(
         padding: const EdgeInsets.all(1.0),
-        child: Container(
-          width: 25,
-          height: 25,
-          color: color,
+        child: Transform.rotate(
+          child: Container(
+            width: 25,
+            height: 25,
+            color: color,
+          ),
+          angle: isChosen ? pi/4 : 0,
         ),
       ),
       onTap: () {
@@ -153,7 +158,7 @@ class ColourPickerDialogue extends StatelessWidget {
     );
   }
 
-  Widget buildRow(BuildContext context, ColorSwatch swatch) {
+  Widget _buildRow(BuildContext context, ColorSwatch swatch) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -167,7 +172,7 @@ class ColourPickerDialogue extends StatelessWidget {
         swatch[700],
         swatch[800],
         swatch[900],
-      ].map((c) => buildCell(context, c)).toList(),
+      ].map((c) => _buildCell(context, c)).toList(),
     );
   }
 
@@ -195,7 +200,7 @@ class ColourPickerDialogue extends StatelessWidget {
           Colors.blueGrey,
           Colors.brown,
           Colors.grey,
-        ].map((c) => buildRow(context, c)).toList(),
+        ].map((c) => _buildRow(context, c)).toList(),
       ),
     );
   }
