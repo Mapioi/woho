@@ -220,11 +220,11 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  void _onCopy(BuildContext context) {
+  void _onCopy(BuildContext context, String entityName) {
     model.copyWd();
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: Text("Copied flashcard!"),
+        content: Text("Copied $entityName!"),
       ),
     );
   }
@@ -262,6 +262,21 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  void _onBrowseFlashcards(BuildContext context) {
+    patch(model.wd);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return FlashcardViewer(
+            flashcards: files.listFlashcards(model.wd),
+          );
+        },
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isFc = files.isFlashcard(model.wd);
@@ -294,18 +309,18 @@ class _FlashcardExplorerView extends StatelessWidget {
               icon: Icon(Icons.create_new_folder),
               onPressed: () => _onCreateFolder(context),
             ),
-          if (isFc)
-            // Use a builder to access a context 'under' the scaffold.
+          // Use a builder to access a context 'under' the scaffold.
+          if (model.canCdUp())
             Builder(
               builder: (context) => IconButton(
-                tooltip: "Copy flashcard",
+                tooltip: "Copy $entityName",
                 icon: Icon(Icons.copy),
-                onPressed: () => _onCopy(context),
+                onPressed: () => _onCopy(context, entityName),
               ),
             ),
           if (!isFc)
             IconButton(
-              tooltip: "Paste flashcard",
+              tooltip: "Paste",
               icon: Icon(Icons.paste),
               onPressed: model.canPaste ? () => _onPaste(context) : null,
             ),
@@ -329,23 +344,15 @@ class _FlashcardExplorerView extends StatelessWidget {
             ),
         ],
       ),
-      body: files.isFlashcard(model.wd) ? _buildFlashcard(context) : _buildFolder(),
+      body: files.isFlashcard(model.wd)
+          ? _buildFlashcard(context)
+          : _buildFolder(),
       floatingActionButton: isFc
           ? null
           : FloatingActionButton(
               tooltip: "Browse flashcards",
               child: Icon(Icons.style),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    return FlashcardViewer(
-                      flashcards: files.listFlashcards(model.wd),
-                    );
-                  },
-                  fullscreenDialog: true,
-                ),
-              ),
+              onPressed: () => _onBrowseFlashcards(context),
             ),
     );
   }

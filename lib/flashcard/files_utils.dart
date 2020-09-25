@@ -24,8 +24,9 @@ Config config(Directory dir) {
     // Put here since this issue disappeared after I tried to print
     final configJson = jsonDecode(configStr);
     return Config.fromJson(configJson);
-  } on FormatException catch (_) {
-    print(configStr);
+  } on FormatException catch (e) {
+    print("Error reading config of $dir: $configStr");
+    print(e);
     return Config.empty();
   }
 }

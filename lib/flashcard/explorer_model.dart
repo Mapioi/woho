@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import './config.dart';
 import './files_utils.dart' as files;
 import '../whiteboard/data.dart';
@@ -44,7 +45,7 @@ void patch(Directory root) {
       if (!doesDirExist) {
         print("Removed no longer existing $name from config");
       }
-      return !doesDirExist;
+      return doesDirExist;
     }).toList();
 
     for (final entity in root.listSync()) {
@@ -57,6 +58,8 @@ void patch(Directory root) {
         patch(entity); // TODO maybe limit recursion depth
       }
     }
+    final configString = jsonEncode(config.toJson());
+    files.configFile(root).writeAsStringSync(configString);
   }
 }
 
@@ -85,6 +88,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
   void cd(Directory dir) {
     _pastDirs.add(dir);
     _wd = dir;
+    patch(_wd);
     notifyListeners();
   }
 
@@ -94,6 +98,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     assert(canCdUp());
     _pastDirs.removeLast();
     _wd = _pastDirs.last;
+    patch(_wd);
     notifyListeners();
   }
 
@@ -117,7 +122,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     newConfigFile.createSync();
     final newConfig = Config.empty();
     final newConfigJson = newConfig.toJson();
-    newConfigFile.writeAsString(jsonEncode(newConfigJson));
+    newConfigFile.writeAsStringSync(jsonEncode(newConfigJson));
 
     assert(newConfigFile.existsSync());
     notifyListeners();
@@ -192,30 +197,61 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  copyWd() {
-    assert(files.isFlashcard(_wd));
-    _clipboard = _Clipboard(
-      flashcardName: _wd.path.split('/').last,
-      frontContents: files.frontSvg(_wd).readAsStringSync(),
-      backContents: files.frontSvg(_wd).readAsStringSync(),
-      logContents: files.logFile(_wd).readAsStringSync(),
-    );
+  copyWd() async {
+    try {
+      final tmp = await getTemporaryDirectory();
+      final cache = Directory("${tmp.path}/clipboard");
+      if (await cache.exists()) {
+        await cache.delete(recursive: true);
+      }
+      await cache.create();
+
+      patch(_wd);
+      await for (final entity in _wd.list(recursive: true)) {
+        final relativeName = files.relativeName(_wd, entity);
+        final newPath = cache.path + '/$relativeName';
+        if (entity is Directory) {
+          await Directory(newPath).create();
+        } else if (entity is File) {
+          await File(newPath).create();
+          await entity.copy(newPath);
+        }
+      }
+
+      _clipboard = _Clipboard(
+        cache: cache,
+        name: files.relativeName(parentDir, _wd),
+      );
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  bool get canPaste {
+    if (_clipboard != null) {
+      if (_clipboard.cache.existsSync()) {
+        return true;
+      } else {
+        _clipboard = null;
+        notifyListeners();
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   Directory _pastedClipboardDirectory() {
-    assert(_clipboard != null);
-    final path = _wd.path + '/' + _clipboard.flashcardName;
+    final path = _wd.path + '/' + _clipboard.name;
     return Directory(path);
   }
 
   bool get willPasteCreateConflict => _pastedClipboardDirectory().existsSync();
 
-  bool get canPaste => _clipboard != null;
-
-  String get clipboardName => _clipboard.flashcardName;
+  String get clipboardName => _clipboard.name;
 
   pasteIntoWd() {
-    assert(_clipboard != null);
     final oldDir = _pastedClipboardDirectory();
     if (oldDir.existsSync()) {
       oldDir.deleteSync(recursive: true);
@@ -224,16 +260,21 @@ class FlashcardExplorerModel extends ChangeNotifier {
     final newDir = _pastedClipboardDirectory();
     assert(!newDir.existsSync());
     newDir.createSync();
-    files.frontSvg(newDir).createSync();
-    files.frontSvg(newDir).writeAsStringSync(_clipboard.frontContents);
-    files.backSvg(newDir).createSync();
-    files.backSvg(newDir).writeAsStringSync(_clipboard.backContents);
-    files.logFile(newDir).createSync();
-    files.logFile(newDir).writeAsStringSync(_clipboard.logContents);
+
+    for (final entity in _clipboard.cache.listSync(recursive: true)) {
+      final relativeName = files.relativeName(_clipboard.cache, entity);
+      final absoluteName = "${newDir.path}/$relativeName";
+      if (entity is Directory) {
+        Directory(absoluteName).createSync();
+      } else if (entity is File) {
+        File(absoluteName).createSync();
+        entity.copySync(absoluteName);
+      }
+    }
 
     final wdConfig = files.config(_wd);
-    if (!wdConfig.orderedContents.contains(_clipboard.flashcardName)) {
-      wdConfig.orderedContents.add(_clipboard.flashcardName);
+    if (!wdConfig.orderedContents.contains(_clipboard.name)) {
+      wdConfig.orderedContents.add(_clipboard.name);
     }
     files.configFile(_wd).writeAsStringSync(jsonEncode(wdConfig.toJson()));
 
@@ -259,15 +300,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
 }
 
 class _Clipboard {
-  final String flashcardName;
-  final String frontContents;
-  final String backContents;
-  final String logContents;
+  final String name;
+  final Directory cache;
 
-  _Clipboard({
-    @required this.flashcardName,
-    @required this.frontContents,
-    @required this.backContents,
-    @required this.logContents,
-  });
+  _Clipboard({this.name, this.cache});
 }
