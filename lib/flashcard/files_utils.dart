@@ -2,7 +2,7 @@
 
 import 'dart:io';
 import 'dart:convert';
-import './log.dart';
+import './flashcard_log.dart';
 import './config.dart';
 
 File frontSvg(Directory dir) {

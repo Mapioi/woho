@@ -149,7 +149,8 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     } else {
       final pageLog = files.log(_flashcards[_page]);
       final isPageMarked = pageLog.dates.isNotEmpty &&
-          pageLog.daysSinceLastMarked() <= _maxDaysSinceMarked;
+          (_maxDaysSinceMarked == null ||
+              pageLog.daysSinceLastMarked() <= _maxDaysSinceMarked);
       final pages = _flashcards.asMap().entries.map((entry) {
         final i = entry.key;
         final f = entry.value;
