@@ -9,15 +9,13 @@ class WhiteboardPainter extends CustomPainter {
   final double eraserCircleRadius;
   final bool isRedRevealed;
 
-  WhiteboardPainter(
-    this._data, {
+  WhiteboardPainter(this._data, {
     this.eraserCircleCenter,
     this.eraserCircleRadius,
     this.isRedRevealed,
   });
 
-  WhiteboardPainter.fromMutable(
-    WhiteboardData data, {
+  WhiteboardPainter.fromMutable(WhiteboardData data, {
     this.eraserCircleCenter,
     this.eraserCircleRadius,
     this.isRedRevealed,

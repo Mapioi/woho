@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
@@ -127,11 +128,14 @@ class WhiteboardData {
           final phi = (1 + sqrt(5)) / 2;
 
           final x = size.width / 2;
-          final y = size.height * phi / (1 + phi);
+          final y = size.height / (1 + phi);
           builder.attribute('x', x);
           builder.attribute('y', y);
-          builder.attribute('font-size', 64);
+
+          builder.attribute('font-family', 'roboto');
+          builder.attribute('font-size', "${5 * size.height / 1024}em");
           builder.attribute('text-anchor', 'middle');
+          builder.attribute('dominant-baseline', 'central');
 
           builder.text(title);
         });
