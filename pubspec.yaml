@@ -24,15 +24,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  json_annotation:
+  json_annotation: any
 
-  path_provider:
+  path_provider: any
 
-  provider:
+  provider: any
 
-  reorderables:
+  reorderables: any
 
-  xml:
+  xml: any
 
 
   # The following adds the Cupertino Icons font to your application.

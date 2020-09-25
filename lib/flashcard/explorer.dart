@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderables/reorderables.dart';
 import './explorer_model.dart';
+import './files_utils.dart' as files;
 import './popups.dart';
 import './viewer.dart';
 import '../whiteboard/whiteboard.dart';
@@ -30,7 +31,7 @@ class _FlashcardExplorerState extends State<FlashcardExplorer> {
   Widget build(BuildContext context) {
     if (_root == null) return Text("Loading...");
     return ChangeNotifierProvider(
-      create: (context) => FlashcardExplorerModel.maybeNoConfig(_root),
+      create: (context) => FlashcardExplorerModel(_root),
       child: Consumer<FlashcardExplorerModel>(
         builder: (context, model, child) => _FlashcardExplorerView(model),
       ),
@@ -48,9 +49,9 @@ class _FlashcardExplorerView extends StatelessWidget {
       IconData iconData;
       Color color;
 
-      if (isFlashcard(dir)) {
+      if (files.isFlashcard(dir)) {
         iconData = Icons.collections;
-        final fLog = log(dir);
+        final fLog = files.log(dir);
         if (fLog.dates.isEmpty) {
           color = Colors.black;
         } else {
@@ -62,7 +63,7 @@ class _FlashcardExplorerView extends StatelessWidget {
         }
       } else {
         iconData = Icons.folder;
-        color = Color(config(dir).colourValue);
+        color = Color(files.config(dir).colourValue);
       }
 
       return InkWell(
@@ -73,7 +74,7 @@ class _FlashcardExplorerView extends StatelessWidget {
               color: color,
               size: 125,
             ),
-            Text(relativeName(model.wd, dir)),
+            Text(files.relativeName(model.wd, dir)),
           ],
         ),
         // On tap, cd to the folder
@@ -81,7 +82,7 @@ class _FlashcardExplorerView extends StatelessWidget {
       );
     }
 
-    final contents = config(model.wd).orderedContents;
+    final contents = files.config(model.wd).orderedContents;
     if (contents.isEmpty)
       return Center(
         child: Chip(
@@ -145,7 +146,7 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onCreateFolder(BuildContext context) {
-    assert(!isFlashcard(model.wd));
+    assert(!files.isFlashcard(model.wd));
     showDialog(
       context: context,
       builder: (context) {
@@ -166,7 +167,7 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onCreateFlashcard(BuildContext context) {
-    assert(!isFlashcard(model.wd));
+    assert(!files.isFlashcard(model.wd));
     showDialog(
       context: context,
       builder: (context) {
@@ -174,7 +175,7 @@ class _FlashcardExplorerView extends StatelessWidget {
           root: model.wd,
           title: Chip(
             label: Text("New flashcard"),
-            avatar: Icon(Icons.collections),
+            avatar: Icon(Icons.add_photo_alternate),
           ),
           hintText: "Untitled flashcard",
           onDone: (Directory dir) {
@@ -198,7 +199,7 @@ class _FlashcardExplorerView extends StatelessWidget {
             label: Text("Rename $entityName"),
             avatar: Icon(iconData),
           ),
-          hintText: relativeName(model.parentDir, model.wd),
+          hintText: files.relativeName(model.parentDir, model.wd),
           onDone: (Directory newDir) {
             model.renameWd(newDir.path);
           },
@@ -244,18 +245,18 @@ class _FlashcardExplorerView extends StatelessWidget {
   }
 
   void _onOpenFront(BuildContext context) {
-    launchEditor(context, frontSvg(model.wd));
+    launchEditor(context, files.frontSvg(model.wd));
   }
 
   void _onOpenBack(BuildContext context) {
-    launchEditor(context, backSvg(model.wd));
+    launchEditor(context, files.backSvg(model.wd));
   }
 
   void _onEditFolderColour(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => ColourPickerDialogue(
-        initialColour: Color(config(model.wd).colourValue),
+        initialColour: Color(files.config(model.wd).colourValue),
         onDone: model.setWdColour,
       ),
     );
@@ -263,7 +264,7 @@ class _FlashcardExplorerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isFc = isFlashcard(model.wd);
+    final isFc = files.isFlashcard(model.wd);
     final entityName = isFc ? "flashcard" : "folder";
 
     return Scaffold(
@@ -275,7 +276,9 @@ class _FlashcardExplorerView extends StatelessWidget {
           onPressed: model.canCdUp() ? model.cdUp : null,
         ),
         title: Text(
-          model.canCdUp() ? "~/${relativeName(model.root, model.wd)}/" : "~/",
+          model.canCdUp()
+              ? "~/${files.relativeName(model.root, model.wd)}/"
+              : "~/",
         ),
         centerTitle: true,
         actions: [
@@ -326,7 +329,7 @@ class _FlashcardExplorerView extends StatelessWidget {
             ),
         ],
       ),
-      body: isFlashcard(model.wd) ? _buildFlashcard(context) : _buildFolder(),
+      body: files.isFlashcard(model.wd) ? _buildFlashcard(context) : _buildFolder(),
       floatingActionButton: isFc
           ? null
           : FloatingActionButton(
@@ -337,7 +340,7 @@ class _FlashcardExplorerView extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) {
                     return FlashcardViewer(
-                      flashcards: listFlashcards(model.wd),
+                      flashcards: files.listFlashcards(model.wd),
                     );
                   },
                   fullscreenDialog: true,

@@ -45,3 +45,6 @@ app.*.map.json
 
 # Json serialization logic
 *.g.dart
+
+# Google OAuth client secret
+secret

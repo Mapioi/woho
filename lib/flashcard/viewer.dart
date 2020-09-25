@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import './explorer_model.dart';
+import './files_utils.dart' as files;
 import '../whiteboard/painter.dart';
 import '../whiteboard/whiteboard.dart';
 
@@ -75,7 +76,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
 
       _flashcards = widget.flashcards.where(
         (f) {
-          final fLog = log(f);
+          final fLog = files.log(f);
           if (fLog.dates.isEmpty) {
             return false;
           } else {
@@ -146,7 +147,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
       );
       fab = null;
     } else {
-      final pageLog = log(_flashcards[_page]);
+      final pageLog = files.log(_flashcards[_page]);
       final isPageMarked = pageLog.dates.isNotEmpty &&
           pageLog.daysSinceLastMarked() <= _maxDaysSinceMarked;
       final pages = _flashcards.asMap().entries.map((entry) {
@@ -195,7 +196,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
               icon: Icon(Icons.flip_to_front),
               onPressed: () => launchEditor(
                 context,
-                frontSvg(_flashcards[_page]),
+                files.frontSvg(_flashcards[_page]),
                 onDone: () => setState(() {}),
               ),
             ),
@@ -205,7 +206,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
               icon: Icon(Icons.flip_to_back),
               onPressed: () => launchEditor(
                 context,
-                backSvg(_flashcards[_page]),
+                files.backSvg(_flashcards[_page]),
                 onDone: () => setState(() {}),
               ),
             ),
@@ -265,8 +266,8 @@ class Flashcard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       // Keep aspect ratio so that the title text is correctly positioned.
-      final front = svgData(frontSvg(flashcard));
-      final back = svgData(backSvg(flashcard));
+      final front = svgData(files.frontSvg(flashcard));
+      final back = svgData(files.backSvg(flashcard));
 
       // Both cards have a 4.0px margin, top and bottom.
       final availableHeight = constraints.maxHeight - 4 * 4.0;
