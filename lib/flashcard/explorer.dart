@@ -220,13 +220,18 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
-  void _onCopy(BuildContext context, String entityName) {
-    model.copyWd();
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Copied $entityName!"),
-      ),
-    );
+  void _onCopy(BuildContext context, String entityName) async {
+    try {
+      await model.copyWd();
+      Scaffold.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Copied $entityName!"),
+        ),
+      );
+    } catch (e) {
+      print("Error copying ${model.wd}:");
+      print(e);
+    }
   }
 
   void _onPaste(BuildContext context) {
@@ -255,9 +260,28 @@ class _FlashcardExplorerView extends StatelessWidget {
   void _onEditFolderColour(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => ColourPickerDialogue(
+      builder: (dialogContext) => ColourPickerDialogue(
         initialColour: Color(files.config(model.wd).colourValue),
-        onDone: model.setWdColour,
+        onDone: (color) {
+          Scaffold.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Container(
+                    width: 25,
+                    height: 25,
+                    color: color,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                  ),
+                  Text("Folder colour set!"),
+                ],
+              ),
+            ),
+          );
+          model.setWdColour(color);
+        },
       ),
     );
   }
@@ -310,38 +334,39 @@ class _FlashcardExplorerView extends StatelessWidget {
               onPressed: () => _onCreateFolder(context),
             ),
           // Use a builder to access a context 'under' the scaffold.
-          if (model.canCdUp())
-            Builder(
-              builder: (context) => IconButton(
-                tooltip: "Copy $entityName",
-                icon: Icon(Icons.copy),
-                onPressed: () => _onCopy(context, entityName),
-              ),
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: "Copy $entityName",
+              icon: Icon(Icons.copy),
+              onPressed:
+                  model.canCdUp() ? () => _onCopy(context, entityName) : null,
             ),
+          ),
           if (!isFc)
             IconButton(
               tooltip: "Paste",
               icon: Icon(Icons.paste),
               onPressed: model.canPaste ? () => _onPaste(context) : null,
             ),
-          if (model.canCdUp() && !isFc)
-            IconButton(
-              tooltip: "Change folder colour",
-              icon: Icon(Icons.palette),
-              onPressed: () => _onEditFolderColour(context),
+          if (!isFc)
+            Builder(
+              builder: (context) => IconButton(
+                tooltip: "Change folder colour",
+                icon: Icon(Icons.palette),
+                onPressed:
+                    model.canCdUp() ? () => _onEditFolderColour(context) : null,
+              ),
             ),
-          if (model.canCdUp())
-            IconButton(
-              tooltip: "Rename $entityName",
-              icon: Icon(Icons.drive_file_rename_outline),
-              onPressed: () => _onRename(context, isFc),
-            ),
-          if (model.canCdUp())
-            IconButton(
-              tooltip: "Delete $entityName",
-              icon: Icon(Icons.delete),
-              onPressed: () => _onDelete(context, isFc),
-            ),
+          IconButton(
+            tooltip: "Rename $entityName",
+            icon: Icon(Icons.drive_file_rename_outline),
+            onPressed: model.canCdUp() ? () => _onRename(context, isFc) : null,
+          ),
+          IconButton(
+            tooltip: "Delete $entityName",
+            icon: Icon(Icons.delete),
+            onPressed: model.canCdUp() ? () => _onDelete(context, isFc) : null,
+          ),
         ],
       ),
       body: files.isFlashcard(model.wd)

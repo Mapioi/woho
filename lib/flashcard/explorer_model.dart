@@ -198,34 +198,30 @@ class FlashcardExplorerModel extends ChangeNotifier {
   }
 
   copyWd() async {
-    try {
-      final tmp = await getTemporaryDirectory();
-      final cache = Directory("${tmp.path}/clipboard");
-      if (await cache.exists()) {
-        await cache.delete(recursive: true);
-      }
-      await cache.create();
-
-      patch(_wd);
-      await for (final entity in _wd.list(recursive: true)) {
-        final relativeName = files.relativeName(_wd, entity);
-        final newPath = cache.path + '/$relativeName';
-        if (entity is Directory) {
-          await Directory(newPath).create();
-        } else if (entity is File) {
-          await File(newPath).create();
-          await entity.copy(newPath);
-        }
-      }
-
-      _clipboard = _Clipboard(
-        cache: cache,
-        name: files.relativeName(parentDir, _wd),
-      );
-      notifyListeners();
-    } catch (e) {
-      print(e);
+    final tmp = await getTemporaryDirectory();
+    final cache = Directory("${tmp.path}/clipboard");
+    if (await cache.exists()) {
+      await cache.delete(recursive: true);
     }
+    await cache.create();
+
+    patch(_wd);
+    await for (final entity in _wd.list(recursive: true)) {
+      final relativeName = files.relativeName(_wd, entity);
+      final newPath = cache.path + '/$relativeName';
+      if (entity is Directory) {
+        await Directory(newPath).create();
+      } else if (entity is File) {
+        await File(newPath).create();
+        await entity.copy(newPath);
+      }
+    }
+
+    _clipboard = _Clipboard(
+      cache: cache,
+      name: files.relativeName(parentDir, _wd),
+    );
+    notifyListeners();
   }
 
   bool get canPaste {
