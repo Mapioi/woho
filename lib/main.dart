@@ -18,6 +18,17 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(),
+      builder: (BuildContext context, Widget widget) {
+        ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
+          return Scaffold(
+            body: Center(
+              child: Text(errorDetails.toString()),
+            ),
+          );
+        };
+
+        return widget;
+      },
     );
   }
 }

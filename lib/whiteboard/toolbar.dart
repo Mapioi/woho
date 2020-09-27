@@ -17,17 +17,20 @@ Widget closeButton(BuildContext context, WhiteboardModel model) {
                 content: Text("Do you want to discard unsaved changes?"),
                 actions: <Widget>[
                   FlatButton(
-                    child: Text("Yes"),
+                    child: Text("No"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  FlatButton(
+                    child: Text(
+                      "Yes",
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                     onPressed: () {
                       // Pop alert dialog.
                       Navigator.of(context).pop();
                       // Pop editor page.
                       Navigator.of(context).pop();
                     },
-                  ),
-                  FlatButton(
-                    child: Text("No"),
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),

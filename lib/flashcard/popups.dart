@@ -109,7 +109,7 @@ class DeleteAlertDialogue extends StatelessWidget {
       title: Text(titleText),
       actions: [
         FlatButton(
-          child: Text("Abort"),
+          child: Text("Cancel"),
           onPressed: () => Navigator.pop(context),
         ),
         FlatButton(
