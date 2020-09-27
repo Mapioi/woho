@@ -71,7 +71,7 @@ class WhiteboardPainter extends CustomPainter {
       }
       // Hide red strokes.
       if (isRedRevealed == false &&
-          (stroke.color == null || stroke.color.value == Colors.red.value))
+          (stroke.color != null && stroke.color.value == Colors.red.value))
         continue;
       else
         canvas.drawPath(path, paint);
