@@ -5,16 +5,6 @@ import './painter.dart';
 import './toolbar.dart';
 
 /// A whiteboard widget that supports editing.
-///
-/// ```dart
-/// MaterialPageRoute(
-///   builder: (context) => ChangeNotifierProvider(
-///     create: (context) => WhiteboardModel(data),
-///     child: WhiteboardEditor(),
-///   ),
-///   fullscreenDialog: true,
-/// )
-/// ```
 class WhiteboardEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -28,7 +18,12 @@ class WhiteboardEditor extends StatelessWidget {
         body: Listener(
           child: CustomPaint(
             size: MediaQuery.of(context).size,
-            painter: WhiteboardPainter(model.data),
+            painter: WhiteboardPainter(
+              model.data,
+              eraserCircleCenter: model.eraserCursorPosition,
+              eraserCircleRadius:
+                  model.tool == Tool.eraser ? model.strokeWidth / 2 : null,
+            ),
           ),
           onPointerDown: model.onPointerDown,
           onPointerMove: model.onPointerMove,

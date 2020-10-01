@@ -1,13 +1,50 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import './data.dart';
 
 class WhiteboardPainter extends CustomPainter {
   final UnmodifiableWhiteboardDataView _data;
+  final Offset eraserCircleCenter;
+  final double eraserCircleRadius;
+  final bool isRedRevealed;
 
-  WhiteboardPainter(this._data);
+  WhiteboardPainter(this._data, {
+    this.eraserCircleCenter,
+    this.eraserCircleRadius,
+    this.isRedRevealed,
+  });
+
+  WhiteboardPainter.fromMutable(WhiteboardData data, {
+    this.eraserCircleCenter,
+    this.eraserCircleRadius,
+    this.isRedRevealed,
+  }) : _data = UnmodifiableWhiteboardDataView(data);
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (_data.title != null) {
+      final phi = (1 + sqrt(5)) / 2;
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: _data.title,
+          style: TextStyle(color: Colors.black),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        textScaleFactor: 5 * size.height / 1024,
+      );
+      tp.layout();
+      tp.paint(
+        canvas,
+        Offset(
+          (size.width - tp.width) / 2,
+          (size.height - tp.height) / (1 + phi),
+        ),
+      );
+    }
+
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
 
     for (final stroke in _data.strokes) {
@@ -32,7 +69,24 @@ class WhiteboardPainter extends CustomPainter {
       } else {
         paint.color = stroke.color;
       }
-      canvas.drawPath(path, paint);
+      // Hide red strokes.
+      if (isRedRevealed == false &&
+          (stroke.color != null && stroke.color.value == Colors.red.value))
+        continue;
+      else
+        canvas.drawPath(path, paint);
+    }
+
+    // Shows the current erasing cursor
+    if (eraserCircleCenter != null && eraserCircleRadius != null) {
+      final eraserCirclePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke;
+      canvas.drawCircle(
+        eraserCircleCenter,
+        eraserCircleRadius,
+        eraserCirclePaint,
+      );
     }
 
     canvas.restore();

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import './whiteboard/model.dart';
-import './whiteboard/editor.dart';
+import './flashcard/explorer.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,7 +9,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Write Out to Help Out',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         // This makes the visual density adapt to the platform that you run
@@ -20,6 +18,17 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(),
+      builder: (BuildContext context, Widget widget) {
+        ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
+          return Scaffold(
+            body: Center(
+              child: Text(errorDetails.toString()),
+            ),
+          );
+        };
+
+        return widget;
+      },
     );
   }
 }
@@ -27,27 +36,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Write Out TO Help Out"),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChangeNotifierProvider(
-                create: (context) => WhiteboardModel.empty(size),
-                child: WhiteboardEditor(),
-              ),
-              fullscreenDialog: true,
-            ),
-          );
-        },
-        child: Icon(Icons.edit),
-      ),
-    );
+    return FlashcardExplorer();
   }
 }

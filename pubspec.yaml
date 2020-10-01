@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.0+1
+version: 0.1.0+1
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
@@ -24,9 +24,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  provider:
+  json_annotation: any
 
-  xml:
+  path_provider: any
+
+  provider: any
+
+  reorderables: any
+
+  xml: any
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -38,6 +44,10 @@ dev_dependencies:
     sdk: flutter
 
   test:
+
+  build_runner:
+
+  json_serializable:
 
 
 # For information on the generic Dart part of this file, see the

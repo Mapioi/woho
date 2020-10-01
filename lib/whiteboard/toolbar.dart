@@ -17,17 +17,20 @@ Widget closeButton(BuildContext context, WhiteboardModel model) {
                 content: Text("Do you want to discard unsaved changes?"),
                 actions: <Widget>[
                   FlatButton(
-                    child: Text("Yes"),
+                    child: Text("No"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  FlatButton(
+                    child: Text(
+                      "Yes",
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                     onPressed: () {
                       // Pop alert dialog.
                       Navigator.of(context).pop();
                       // Pop editor page.
                       Navigator.of(context).pop();
                     },
-                  ),
-                  FlatButton(
-                    child: Text("No"),
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
@@ -80,6 +83,7 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
 
   Widget makeToolButton(Tool tool) {
     return IconButton(
+      tooltip: tool.toString().split('.')[1],
       icon: Icon(WhiteboardModel.toolIcons[tool]),
       onPressed: model.tool == tool
           ? null
@@ -92,23 +96,31 @@ List<Widget> toolbarButtons(BuildContext context, WhiteboardModel model) {
   }
 
   final saveButton = IconButton(
+    tooltip: "Save changes",
     icon: Icon(Icons.save),
     onPressed: model.isSaved() ? null : model.save,
   );
 
   final undoButton = IconButton(
+    tooltip: "Undo change",
     icon: Icon(Icons.undo),
     onPressed: model.canUndo() ? model.undo : null,
   );
 
   final redoButton = IconButton(
+    tooltip: "Redo change",
     icon: Icon(Icons.redo),
     onPressed: model.canRedo() ? model.redo : null,
   );
 
-  final buttons = <Widget>[saveButton, strokeWidthDropdown, colorDropdown]
-    ..addAll(Tool.values.map(makeToolButton))
-    ..addAll([undoButton, redoButton]);
+  final buttons = <Widget>[
+    saveButton,
+    strokeWidthDropdown,
+    colorDropdown,
+    ...Tool.values.map(makeToolButton),
+    undoButton,
+    redoButton
+  ];
 
   final paddedButtons = buttons.map((w) {
     return Padding(

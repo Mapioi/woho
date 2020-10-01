@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
@@ -76,10 +77,11 @@ class UnmodifiableStrokeView {
 
 /// A container for the [Size] of the whiteboard and the [Stroke]s on it.
 class WhiteboardData {
-  final Size size;
-  final List<Stroke> strokes;
+  Size size;
+  List<Stroke> strokes;
+  String title;
 
-  WhiteboardData(this.size, this.strokes);
+  WhiteboardData(this.size, this.strokes, {this.title});
 
   /// Generates an svg document that produces the same image as painted by a
   /// [WhiteboardPainter].
@@ -119,6 +121,25 @@ class WhiteboardData {
     builder.element('svg', nest: () {
       builder.attribute('viewBox', "0 0 ${size.width} ${size.height}");
       builder.attribute('xmlns', "http://www.w3.org/2000/svg");
+
+      // Title
+      if (title != null) {
+        builder.element('text', nest: () {
+          final phi = (1 + sqrt(5)) / 2;
+
+          final x = size.width / 2;
+          final y = size.height / (1 + phi);
+          builder.attribute('x', x);
+          builder.attribute('y', y);
+
+          builder.attribute('font-family', 'roboto');
+          builder.attribute('font-size', "${5 * size.height / 1024}em");
+          builder.attribute('text-anchor', 'middle');
+          builder.attribute('dominant-baseline', 'central');
+
+          builder.text(title);
+        });
+      }
 
       // Suppose that we have painted the strokes p_1, p_2, e_1, p_3, e_2 in
       // this order, where p_i is a pen stroke and e_j is an erasing stroke.
@@ -265,7 +286,7 @@ class WhiteboardData {
       final maskId = int.parse(maskUrl.split('url(#eraser')[1].split(')')[0]);
       assert(maskUrl == "url(#eraser$maskId)");
       assert(maskId <= iEraser);
-      while (iEraser > max(1, maskId)) {
+      while (iEraser > maskId) {
         strokes.add(eraserStrokes[iEraser]);
         iEraser -= 1;
       }
@@ -277,9 +298,17 @@ class WhiteboardData {
       iEraser -= 1;
     }
 
+    String title;
+    final texts = svg.findElements('text');
+    assert(texts.length <= 1);
+    if (texts.isNotEmpty) {
+      title = texts.first.text;
+    }
+
     return WhiteboardData(
       Size(width, height),
       strokes,
+      title: title,
     );
   }
 
@@ -311,6 +340,7 @@ class WhiteboardData {
         }
         return resizedStroke;
       }).toList(),
+      title: title,
     );
     return data;
   }
@@ -332,6 +362,8 @@ class UnmodifiableWhiteboardDataView {
       UnmodifiableListView(
         _data.strokes.map((stroke) => UnmodifiableStrokeView(stroke)),
       );
+
+  String get title => _data.title;
 
   XmlDocument get svg => _data.svg;
 }

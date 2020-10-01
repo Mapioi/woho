@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import './history.dart';
 import './data.dart';
 
+typedef CallbackTakingString = void Function(String);
+
 enum Tool {
   /// Produces a pen stroke following the stylus position with
   /// [WhiteboardModel.strokeWidth] and [WhiteboardModel.color].
@@ -21,28 +23,29 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   /// Create a whiteboard rendering the data.
   ///
   /// It is assumed that [_data]'s dimension fits inside the canvas size.
-  WhiteboardModel(this._data);
-
-  WhiteboardModel.empty(Size size) : _data = WhiteboardData(size, []);
+  WhiteboardModel(this._data, this._onSave);
 
   final WhiteboardData _data;
+  final CallbackTakingString _onSave;
   Stroke _currentStroke;
+  Offset _eraserCursorPosition;
   Tool _tool = Tool.pen;
+
+  Offset get eraserCursorPosition => _eraserCursorPosition;
 
   UnmodifiableWhiteboardDataView get data =>
       UnmodifiableWhiteboardDataView(_data);
 
   static final defaultColors = UnmodifiableMapView({
-    Tool.pen: Colors.blueAccent,
+    Tool.pen: Colors.blue,
     Tool.eraser: null,
   });
 
   static final colorChoices = UnmodifiableMapView({
     Tool.pen: UnmodifiableListView([
       Colors.red,
-      Colors.blueAccent,
+      Colors.blue,
       Colors.black,
-      Colors.grey,
     ]),
     Tool.eraser: UnmodifiableListView(<Color>[]),
   });
@@ -88,21 +91,21 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
 
   Color get color => _colors[_tool];
 
-  set color(newColor) {
+  set color(Color newColor) {
     _colors[_tool] = newColor;
     notifyListeners();
   }
 
   double get strokeWidth => _strokeWidths[_tool];
 
-  set strokeWidth(newStrokeWidth) {
+  set strokeWidth(double newStrokeWidth) {
     _strokeWidths[_tool] = newStrokeWidth;
     notifyListeners();
   }
 
   Tool get tool => _tool;
 
-  set tool(newTool) {
+  set tool(Tool newTool) {
     _tool = newTool;
     notifyListeners();
   }
@@ -111,6 +114,12 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
     // Only accept stylus input to achieve palm rejection
     if (event.kind == PointerDeviceKind.stylus) {
       if (_tool == Tool.pen || _tool == Tool.eraser) {
+        // Show the cursor of the eraser as a visual aid.
+        if (_tool == Tool.eraser) {
+          _eraserCursorPosition = event.localPosition;
+          notifyListeners();
+        }
+
         _currentStroke = Stroke(
           color: color,
           isErasing: _tool == Tool.eraser,
@@ -142,6 +151,11 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   void onPointerMove(PointerMoveEvent event) {
     if (event.kind == PointerDeviceKind.stylus) {
       if (_tool == Tool.pen || _tool == Tool.eraser) {
+        if (_tool == Tool.eraser) {
+          _eraserCursorPosition = event.localPosition;
+          notifyListeners();
+        }
+
         _currentStroke.offsets.add(event.localPosition);
         notifyListeners();
       }
@@ -150,6 +164,11 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
 
   void onPointerUp(PointerUpEvent event) {
     if (event.kind == PointerDeviceKind.stylus) {
+      if (_tool == Tool.eraser) {
+        _eraserCursorPosition = null;
+        notifyListeners();
+      }
+
       if (_tool == Tool.pen || _tool == Tool.eraser) {
         _currentStroke = null;
       }
@@ -160,6 +179,6 @@ class WhiteboardModel extends ChangeNotifier with Undoable {
   void save() {
     super.save();
     notifyListeners();
-    print(_data.svg.toXmlString(pretty: true));
+    _onSave(_data.svg.toXmlString(pretty: true));
   }
 }
