@@ -7,18 +7,33 @@ import './files_utils.dart' as files;
 import '../whiteboard/data.dart';
 import '../whiteboard/whiteboard.dart';
 
+/// Mark this [flashcard] and write the changes to [files.logFile].
 void markFlashcard(Directory flashcard) {
   final fLog = files.log(flashcard);
   fLog.mark();
   files.logFile(flashcard).writeAsStringSync(fLog.toString());
 }
 
+/// Unmark this [flashcard] and write the changes to [files.logFile].
 void unmarkFlashcard(Directory flashcard) {
   final fLog = files.log(flashcard);
   fLog.unMark();
   files.logFile(flashcard).writeAsStringSync(fLog.toString());
 }
 
+/// Patch [root] by adding the missing [files.configFile]s and [files.logFile]s,
+/// unlisting non-existent contents, and registering unlisted contents.
+///
+/// A directory is considered to be a flashcard when [files.frontSvg] and
+/// [files.backSvg] exist.
+/// When [root] is a flashcard, an empty [files.logFile] is
+/// created in case it is missing.
+/// When [root] is a folder, the procedure first creates a default
+/// [files.configFile] in case it is missing. It then goes through
+/// [Config.orderedContents], checks whether the listed directories still exist,
+/// and removes the no longer existing directories from the list. Finally, it
+/// lists the file entities in this folder, and adds any unlisted directories
+/// to the end of [Config.orderedContents].
 void patch(Directory root) {
   if (files.frontSvg(root).existsSync() && files.backSvg(root).existsSync()) {
     // The root directory is a flashcard (directory).
@@ -63,6 +78,12 @@ void patch(Directory root) {
   }
 }
 
+/// The model for a flashcard explorer.
+///
+/// It keeps track of the current directory in [_wd], and the list of past
+/// directories in [_pastDirs].
+/// It keeps a [_clipboard] for the copied contents.
+/// It is responsible for making the actual changes to the file system.
 class FlashcardExplorerModel extends ChangeNotifier {
   final Directory root;
 
@@ -74,8 +95,14 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   Directory _wd;
 
+  /// The current working directory.
   Directory get wd => _wd;
 
+  /// The immediate parent directory of [wd].
+  ///
+  /// In fact the second to last directory in [_pastDirs] is returned, but since
+  /// only immediate children are listed in the explorer, this entry must be the
+  /// immediate parent of [wd].
   Directory get parentDir {
     assert(canCdUp()); // not home
     return _pastDirs[_pastDirs.length - 2];
@@ -85,7 +112,21 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   _Clipboard _clipboard;
 
+  /// Resets [wd] to [root], patches and reloads the file system.
+  void reset() {
+    _wd = root;
+    _pastDirs = [root];
+    patch(root);
+    notifyListeners();
+  }
+
+  /// Change [wd] to [dir].
+  ///
+  /// We assume that [dir] is a direct child of [wd].
+  /// This also patches the new [wd] before notifying listeners.
   void cd(Directory dir) {
+    // Check _wd is the direct parent of dir.
+    assert(!files.relativeName(_wd, dir).contains('/'));
     _pastDirs.add(dir);
     _wd = dir;
     patch(_wd);
@@ -94,6 +135,9 @@ class FlashcardExplorerModel extends ChangeNotifier {
 
   bool canCdUp() => _pastDirs.length > 1;
 
+  /// Change [wd] to the last directory of [_pastDirs].
+  ///
+  /// This also patches the new [wd] before notifying listeners.
   void cdUp() {
     assert(canCdUp());
     _pastDirs.removeLast();
@@ -102,6 +146,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Create [dir] in [wd], and add [dir] to [Config.orderedContents] in
+  /// [wd]'s [files.configFile].
   _createDirectory(Directory dir) {
     assert(!dir.existsSync());
     dir.createSync();
@@ -113,6 +159,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     wdConfigFile.writeAsStringSync(jsonEncode(wdConfig.toJson()));
   }
 
+  /// Create the folder [dir] with a default [files.configFile].
   createFolder(Directory dir) {
     _createDirectory(dir);
 
@@ -128,6 +175,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Create the flashcard [dir] with an empty [files.logFile] as well as empty
+  /// 1024x768 [files.frontSvg] and [files.backSvg].
   createFlashcard(Directory dir) {
     final name = files.relativeName(_wd, dir);
     _createDirectory(dir);
@@ -154,6 +203,12 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Rename [wd] to [newPath];
+  /// if [wd] is a flashcard, rename [WhiteboardData.title] of [files.frontSvg]
+  /// as well;
+  /// rename entry in [Config.orderedContents] of [wd]'s [files.configFile].
+  ///
+  /// There must not be an existing directory at [newPath].
   renameWd(String newPath) {
     assert(!Directory(newPath).existsSync());
 
@@ -181,6 +236,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Delete [wd], removing the entry from [Config.orderedContents] in
+  /// [parentDir]'s [files.configFile].
   deleteWdAndCdUp() {
     assert(canCdUp());
     final wdName = files.relativeName(parentDir, _wd);
@@ -197,6 +254,9 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Copy [wd]'s contents recursively to a temporary folder, storing the name
+  /// of the copied directory and the location of the temporary folder in
+  /// [_clipboard].
   copyWd() async {
     final tmp = await getTemporaryDirectory();
     final cache = Directory("${tmp.path}/clipboard");
@@ -224,6 +284,7 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Check whether [_clipboard] exists to be pasted.
   bool get canPaste {
     if (_clipboard != null) {
       if (_clipboard.cache.existsSync()) {
@@ -238,15 +299,22 @@ class FlashcardExplorerModel extends ChangeNotifier {
     }
   }
 
+  /// The resulting directory when [_clipboard] is pasted into [wd].
   Directory _pastedClipboardDirectory() {
     final path = _wd.path + '/' + _clipboard.name;
     return Directory(path);
   }
 
+  /// Checks whether the directory [_pastedClipboardDirectory] already exists.
   bool get willPasteCreateConflict => _pastedClipboardDirectory().existsSync();
 
   String get clipboardName => _clipboard.name;
 
+  /// Paste [_clipboard] recursively into [wd], overwriting the old contents if
+  /// [_pastedClipboardDirectory] already exists.
+  ///
+  /// Adds [_pastedClipboardDirectory] to [Config.orderedContents] in [wd]'s
+  /// [files.configFile] if it is not already listed.
   pasteIntoWd() {
     final oldDir = _pastedClipboardDirectory();
     if (oldDir.existsSync()) {
@@ -277,6 +345,9 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Move the entry at [oldIndex] of [Config.orderedContents] in [wd]'s
+  /// [files.configFile] to [newIndex], so that the entry is placed before the
+  /// original entries from [newIndex] till the end.
   reorderContents(int oldIndex, int newIndex) {
     final wdConfig = files.config(_wd);
     final movedEntity = wdConfig.orderedContents.removeAt(oldIndex);
@@ -286,6 +357,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Changes [Config.colourValue] to the value of [newColor] in [wd]'s
+  /// [files.configFile].
   setWdColour(Color newColor) {
     final wdConfig = files.config(_wd);
     wdConfig.colourValue = newColor.value;
@@ -295,6 +368,8 @@ class FlashcardExplorerModel extends ChangeNotifier {
   }
 }
 
+/// A data object holding the relative [name] of the copied directory and the
+/// [cache] directory to which it is copied.
 class _Clipboard {
   final String name;
   final Directory cache;

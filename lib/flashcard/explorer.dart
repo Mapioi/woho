@@ -9,6 +9,7 @@ import './popups.dart';
 import './viewer.dart';
 import '../whiteboard/whiteboard.dart';
 
+/// A file explorer window for flashcards and folders.
 class FlashcardExplorer extends StatefulWidget {
   @override
   _FlashcardExplorerState createState() => _FlashcardExplorerState();
@@ -17,6 +18,9 @@ class FlashcardExplorer extends StatefulWidget {
 class _FlashcardExplorerState extends State<FlashcardExplorer> {
   Directory _root;
 
+  /// Asynchronously obtain the application documents directory when this object
+  /// is instantiated. Display loading text before the future completes, and use
+  /// [FlashcardExplorerModel] after completion.
   @override
   initState() {
     getApplicationDocumentsDirectory().then(
@@ -39,11 +43,45 @@ class _FlashcardExplorerState extends State<FlashcardExplorer> {
   }
 }
 
+/// The UI part of a [FlashcardExplorer].
+///
+/// This widget is responsible for rendering the file contents, prompting the
+/// user with popup dialogues for certain actions, and invoking appropriate
+/// methods from the internal [FlashcardExplorerModel] to perform the actual
+/// changes on disk.
+///
+/// Appbar:
+/// * The leading icon is a back arrow which is enabled iff [model.canCdUp];
+/// on tap, invoke [model.cdUp] and display the new file contents.
+/// * The title is the relative name of [model.wd].
+/// * Action buttons include: reload files, create new flashcard, create new
+/// folder, copy, paste, change folder colour, rename, delete. When [model.wd]
+/// is a flashcard, buttons for functions that are only enabled when [model.wd]
+/// is a folder are hidden. When [model.wd] is the root directory, buttons for
+/// functions that are only enabled when [model.wd] is not the root directory
+/// are disabled.
+///
+/// Body:
+/// * See [_buildFlashcard] and [_buildFolder].
+///
+/// Floating action button:
+/// * See [_onBrowseFlashcards].
+///
 class _FlashcardExplorerView extends StatelessWidget {
   final FlashcardExplorerModel model;
 
   _FlashcardExplorerView(this.model);
 
+  /// Build a grid of icon buttons representing folders and flashcards which are
+  /// the direct children of the folder [model.wd].
+  ///
+  /// The icons can be dragged around to alter the order of the contents.
+  /// On tapped, [model] navigates to the folder or flashcard represented by the
+  /// tapped icon.
+  /// If the icon represents a folder, the colour is taken from that folder's
+  /// configuration; if the icon represents a flashcard, the colour is red if
+  /// the said flashcard is marked today, and decays to black with a half-life
+  /// of 30 days.
   Widget _buildFolder() {
     Widget _buildFolderTile(Directory dir) {
       IconData iconData;
@@ -66,7 +104,7 @@ class _FlashcardExplorerView extends StatelessWidget {
         color = Color(files.config(dir).colourValue);
       }
 
-      return InkWell(
+      return GestureDetector(
         child: Column(
           children: [
             Icon(
@@ -103,6 +141,11 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Build the contents of the flashcard [model.wd].
+  ///
+  /// The contents are: front, back.
+  /// On tapped, [_onOpenFront] or [_onOpenBack] is invoked to launch an editor
+  /// loaded with that side of the flashcard.
   Widget _buildFlashcard(BuildContext context) {
     Widget _buildFlashcardTile(
       BuildContext context,
@@ -110,7 +153,7 @@ class _FlashcardExplorerView extends StatelessWidget {
       String fileName,
       onTap,
     ) {
-      return InkWell(
+      return GestureDetector(
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
@@ -145,6 +188,10 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Prompt the user with [DirectoryNameDialogue] for the name of the folder
+  /// to be created within [model.wd], and create such a folder.
+  ///
+  /// Only allowed if [model.wd] is a folder.
   void _onCreateFolder(BuildContext context) {
     assert(!files.isFlashcard(model.wd));
     showDialog(
@@ -166,6 +213,10 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Prompt the user with [DirectoryNameDialogue] for the name of the flashcard
+  /// to be created within [model.wd], and create such a flashcard.
+  ///
+  /// Only allowed if [model.wd] is a folder.
   void _onCreateFlashcard(BuildContext context) {
     assert(!files.isFlashcard(model.wd));
     showDialog(
@@ -187,6 +238,9 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Prompt the user with [DirectoryNameDialogue] for the new name of
+  /// [model.wd], which can either be a flashcard or a folder, and then rename
+  /// it accordingly.
   void _onRename(BuildContext context, bool isFc) {
     final entityName = isFc ? "flashcard" : "folder";
     final iconData = isFc ? Icons.collections : Icons.folder;
@@ -208,7 +262,12 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Make the user confirm whether he/she wants to delete [model.wd] via
+  /// [DeleteAlertDialogue] before deleting this folder/flashcard.
+  ///
+  /// Only allowed when [model.wd] is different from [model.root].
   void _onDelete(BuildContext context, bool isFc) {
+    assert(model.wd.toString() != model.root.toString());
     final entityName = isFc ? "flashcard" : "folder";
     showDialog(
       context: context,
@@ -220,6 +279,7 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Copy [model.wd] onto the clipboard and inform the user with a snackbar.
   void _onCopy(BuildContext context, String entityName) async {
     try {
       await model.copyWd();
@@ -234,7 +294,14 @@ class _FlashcardExplorerView extends StatelessWidget {
     }
   }
 
+  /// Paste the flashcard/folder on the clipboard into [model.wd].
+  ///
+  /// Only allowed if [model.wd] is a folder.
+  /// If a folder in [model.wd] shares the same name with the directory on the
+  /// clipboard, then prompt the user with [DeleteAlertDialogue] before
+  /// overwriting the old directory with the one pasted.
   void _onPaste(BuildContext context) {
+    assert(!files.isFlashcard(model.wd));
     if (model.willPasteCreateConflict) {
       showDialog(
         context: context,
@@ -249,15 +316,30 @@ class _FlashcardExplorerView extends StatelessWidget {
     }
   }
 
+  /// Launch a fullscreen editor with the front side of the front side of the
+  /// flashcard [model.wd].
+  ///
+  /// Only allowed if [model.wd] is a flashcard.
   void _onOpenFront(BuildContext context) {
+    assert(files.isFlashcard(model.wd));
     launchEditor(context, files.frontSvg(model.wd));
   }
 
+  /// Launch a fullscreen editor with the back side of the front side of the
+  /// flashcard [model.wd].
+  ///
+  /// Only allowed if [model.wd] is a flashcard.
   void _onOpenBack(BuildContext context) {
+    assert(files.isFlashcard(model.wd));
     launchEditor(context, files.backSvg(model.wd));
   }
 
+  /// Prompt the user for the new colour of the folder [model.wd] with
+  /// [ColourPickerDialogue].
+  ///
+  /// Only allowed when [model.wd] is a folder.
   void _onEditFolderColour(BuildContext context) {
+    assert(!files.isFlashcard(model.wd));
     showDialog(
       context: context,
       builder: (dialogContext) => ColourPickerDialogue(
@@ -286,6 +368,8 @@ class _FlashcardExplorerView extends StatelessWidget {
     );
   }
 
+  /// Launch a new [FlashcardViewer] screen showing flashcards given by
+  /// [files.listFlashcards] called on [model.wd].
   void _onBrowseFlashcards(BuildContext context) {
     patch(model.wd);
     Navigator.push(
@@ -316,11 +400,16 @@ class _FlashcardExplorerView extends StatelessWidget {
         ),
         title: Text(
           model.canCdUp()
-              ? "~/${files.relativeName(model.root, model.wd)}/"
+              ? files.relativeName(model.parentDir, model.wd)
               : "~/",
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: "Reload files",
+            icon: Icon(Icons.refresh),
+            onPressed: model.reset,
+          ),
           if (!isFc)
             IconButton(
               tooltip: "New flashcard",

@@ -5,6 +5,19 @@ import './files_utils.dart' as files;
 import '../whiteboard/painter.dart';
 import '../whiteboard/whiteboard.dart';
 
+/// A viewer for the flashcards.
+///
+/// Appbar:
+/// * Title shows the progress through the flashcards, such as '1 / 15'.
+/// * Action buttons include: edit front, edit back, shuffle flashcards, toggle
+/// bookmarked filter, show/hide red strokes.
+/// * Floating action button: mark / unmark flashcard. The flashcard is shown as
+/// marked if it has been marked at most [_maxDaysSinceMarked] days ago, and in
+/// this case, tapping on the button removes the last marks. Otherwise, tapping
+/// adds a new mark to the flashcard.
+///
+/// Body:
+/// * [Flashcard] of the card directory at [_page].
 class FlashcardViewer extends StatefulWidget {
   final List<Directory> flashcards;
 
@@ -23,6 +36,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
   bool _isFilteringMarked = false;
   int _maxDaysSinceMarked = 7;
 
+  /// Produce a constant map that sends each of 0..length-1 to [value].
   Map<int, T> constantMapRange<T>(int length, T value) {
     return Map.fromIterable(
       List.generate(length, (i) => i),
@@ -31,6 +45,8 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     );
   }
 
+  /// Initialise the page controller, and hide all back sides of the
+  /// [_flashcards] at the start.
   @override
   void initState() {
     super.initState();
@@ -46,6 +62,10 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     _controller.dispose();
   }
 
+  /// Toggle between seeing every flashcard and seeing only flashcards that have
+  /// been marked at most [_maxDaysSinceMarked] days ago.
+  ///
+  /// This resets the controller to the first page, and hides all back sides.
   void toggleFilteringMarked() {
     if (_isFilteringMarked) {
       // Remove filter.
@@ -66,6 +86,13 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     }
   }
 
+  /// Filter the [_flashcards] to see only those that have been marked at most
+  /// [maxDaysSinceMarked] days ago.
+  ///
+  /// If [maxDaysSinceMarked] is null, then return the flashcards that have
+  /// been marked at least once at any time.
+  ///
+  /// This resets the controller to the first page, and hides all back sides.
   void filterMarked(int maxDaysSinceMarked) {
     assert(_isFilteringMarked);
     setState(() {
@@ -94,7 +121,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     });
   }
 
-  List<DropdownMenuItem<int>> buildFilterMarkedOptions() {
+  List<DropdownMenuItem<int>> _buildFilterMarkedOptions() {
     final days = [1, 7, 30, 365];
     final options = days.map((d) {
       final dayOrDays = d == 1 ? "day" : "days";
@@ -120,9 +147,15 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
     return [...options, foreverOption];
   }
 
+  /// Shuffle the [_flashcards].
+  ///
+  /// Resets the controller to the first page, and hides all back sides.
   void shuffle() {
     setState(() {
       // The animation also triggers onChange and sets _page to 0.
+      // Note: .jumpToPage was used before when toggling the filter, because the
+      // range of values can shrink and cause errors, whilst here the range
+      // remains constant.
       _controller.animateToPage(
         0,
         duration: Duration(seconds: 1),
@@ -226,7 +259,7 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
           ),
           if (_isFilteringMarked)
             DropdownButton<int>(
-              items: buildFilterMarkedOptions(),
+              items: _buildFilterMarkedOptions(),
               value: _maxDaysSinceMarked,
               onChanged: filterMarked,
               iconEnabledColor: Theme.of(context).buttonColor,
@@ -249,6 +282,10 @@ class _FlashcardViewerState extends State<FlashcardViewer> {
   }
 }
 
+/// A column of 2 canvases rendering the front and back of the flashcard.
+///
+/// Supports zooming in and moving around when zooming.
+/// On tapping the bottom, toggle the visibility of that canvas.
 class Flashcard extends StatelessWidget {
   final Directory flashcard;
   final bool isBottomRevealed;

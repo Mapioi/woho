@@ -23,7 +23,7 @@ class DirectoryNameDialogue extends StatefulWidget {
   _DirectoryNameDialogueState createState() => _DirectoryNameDialogueState();
 }
 
-enum DirectoryNameStatus {
+enum _DirectoryNameStatus {
   alreadyExists,
   containsSlash,
   empty,
@@ -32,19 +32,19 @@ enum DirectoryNameStatus {
 
 class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
   String _input = "";
-  DirectoryNameStatus _status = DirectoryNameStatus.empty;
+  _DirectoryNameStatus _status = _DirectoryNameStatus.empty;
 
   Directory get _directory => Directory(widget.root.path + "/" + _input);
 
   String get _errorText {
     switch (_status) {
-      case DirectoryNameStatus.alreadyExists:
+      case _DirectoryNameStatus.alreadyExists:
         return "$_input already exists.";
-      case DirectoryNameStatus.empty:
+      case _DirectoryNameStatus.empty:
         return "Name must not be empty.";
-      case DirectoryNameStatus.containsSlash:
+      case _DirectoryNameStatus.containsSlash:
         return "Name must not contain '/'.";
-      case DirectoryNameStatus.ok:
+      case _DirectoryNameStatus.ok:
         return null;
     }
     return "Unexpected error";
@@ -52,15 +52,15 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
 
   void _onInputChange(String newInput) {
     final newDirectory = Directory(widget.root.path + "/" + newInput);
-    DirectoryNameStatus status;
+    _DirectoryNameStatus status;
     if (newInput.isEmpty) {
-      status = DirectoryNameStatus.empty;
+      status = _DirectoryNameStatus.empty;
     } else if (newInput.contains('/')) {
-      status = DirectoryNameStatus.containsSlash;
+      status = _DirectoryNameStatus.containsSlash;
     } else if (newDirectory.existsSync()) {
-      status = DirectoryNameStatus.alreadyExists;
+      status = _DirectoryNameStatus.alreadyExists;
     } else {
-      status = DirectoryNameStatus.ok;
+      status = _DirectoryNameStatus.ok;
     }
     setState(() {
       _input = newInput;
@@ -81,7 +81,7 @@ class _DirectoryNameDialogueState extends State<DirectoryNameDialogue> {
         keyboardType: TextInputType.text,
         onChanged: _onInputChange,
         onEditingComplete: () {
-          if (_status == DirectoryNameStatus.ok) {
+          if (_status == _DirectoryNameStatus.ok) {
             Navigator.pop(context);
             widget.onDone(_directory);
           }

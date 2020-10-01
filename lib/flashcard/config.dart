@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 
 part 'config.g.dart';
 
+/// Configuration for a folder.
+///
+/// The display colour [colourValue] of the folder and the order of the contents
+/// [orderedContents] are stored in a json file.
 @JsonSerializable()
 class Config {
   Config(this.colourValue, this.orderedContents);
